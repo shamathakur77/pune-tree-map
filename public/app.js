@@ -1219,7 +1219,14 @@
     var h = forced != null ? forced : (location.hash || "").replace("#", "").toLowerCase();
     if (!h) return;
     if (h === "pollen") { selectTab("flower"); setBloomView("pollen"); return; }
-    for (var k in HASH) if (HASH[k] === h) { selectTab(k); break; }
+    for (var k in HASH) if (HASH[k] === h) { selectTab(k); afterTab(k); break; }
+  }
+
+  /* Side effects a tab needs when it becomes visible. The click handler and
+     the deep-link path must both run these, or #treasure opens empty. */
+  function afterTab(n) {
+    if (n === "treasure") renderTreasures();
+    if (n === "flower") centreMonth();
   }
   function selectTab(name) {
     S.tab = name;
@@ -1236,8 +1243,7 @@
       $("tab-" + n).addEventListener("click", function () {
         selectTab(n);
         if (S.snap === "peek") setSnap("half");
-        if (n === "treasure") renderTreasures();
-        if (n === "flower") centreMonth();
+        afterTab(n);
         if (n === "act") renderAct();
       });
     });
