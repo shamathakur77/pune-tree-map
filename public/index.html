@@ -72,6 +72,7 @@
     <button role="tab" id="tab-treasure" aria-controls="p-treasure" aria-selected="false"></button>
     <button role="tab" id="tab-ward"     aria-controls="p-ward"     aria-selected="false"></button>
     <button role="tab" id="tab-facts"    aria-controls="p-facts"    aria-selected="false"></button>
+    <button role="tab" id="tab-act"      aria-controls="p-act"      aria-selected="false"></button>
   </div>
 
   <div class="peekline" id="peekline"></div>
@@ -92,6 +93,7 @@
       <p class="sub" id="fl-sub"></p>
       <div class="months" id="months" role="group"></div>
       <div id="flowerlist"></div>
+      <div id="pollen"></div>
     </section>
 
     <section class="panel" id="p-treasure" role="tabpanel" aria-labelledby="tab-treasure" hidden>
@@ -121,6 +123,18 @@
       <h2 class="h" id="fa-h"></h2>
       <p class="sub" id="fa-sub"></p>
       <div id="facts"></div>
+    </section>
+
+    <section class="panel" id="p-act" role="tabpanel" aria-labelledby="tab-act" hidden>
+      <p class="eyebrow" id="ac-eyebrow"></p>
+      <h2 class="h" id="ac-h"></h2>
+      <p class="sub" id="ac-sub"></p>
+      <label class="pickwrap"><span id="ac-pick"></span>
+        <select id="wardpick"></select>
+      </label>
+      <div id="actbrief"></div>
+      <div id="actdocs"></div>
+      <div id="acthow"></div>
     </section>
 
   </div>

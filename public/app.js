@@ -96,6 +96,49 @@
     share:        ["शेअर करा", "Share"],
     copy:         ["कॉपी", "Copy"],
     copied:       ["✓ कॉपी झालं", "✓ Copied"],
+    tabAct:       ["कृती", "Act"],
+
+    polEyebrow:   ["श्वसन · हवेतील परागकण", "POLLEN & BREATHING"],
+    polH:         ["या महिन्यात हवेत काय?", "What is in the air this month?"],
+    polCount:     ["प्रजाती या महिन्यात फुलतात आणि भारतीय ॲलर्जी संशोधनात नोंदल्या आहेत.",
+                   "species flowering this month appear in the Indian aeroallergen literature."],
+    polNone:      ["या महिन्यात फुलणारी एकही प्रजाती त्या यादीत नाही.",
+                   "No species flowering this month appears on that list."],
+    polSeason:    ["वर्षभराचा आलेख", "Across the year"],
+    polShowy:     ["गुलमोहर, बहावा, टॅबेबुया — सर्वात दिसणारी फुलं, पण यादीत नाहीत. जी झाडं सर्वात सुंदर फुलतात तीच नाक वाहायला लावतात असं नाही.",
+                   "Gulmohar, Bahava and Tabebuia are the showiest flowers in Pune and none is on the list. The tree that looks most dramatic in bloom is often not the one behind a streaming nose."],
+    polWarnT:     ["हे परागकणांचं मोजमाप नाही.", "This is not a pollen measurement."],
+    polWarn:      ["पुण्यासाठी थेट परागकण मोजणीचा खुला स्रोत उपलब्ध नाही. इथे एवढंच सांगितलं आहे: गणनेनुसार या महिन्यात कोणत्या प्रजाती फुलतात, आणि त्यांपैकी कोणत्या भारतीय ॲलर्जी संशोधनात नोंदल्या आहेत. आजच्या हवेत काय आहे हे यावरून कळत नाही, ते हवामान, वारा आणि पावसावर अवलंबून असतं. हा वैद्यकीय सल्ला नाही. यादीत नसलेली झाडं सुरक्षित ठरत नाहीत, फक्त यादीत नाहीत एवढंच.",
+                   "Pune has no live open pollen-count feed. All this shows is which species the census records as flowering this month, and which of those appear in the published Indian aeroallergen literature. It cannot tell you what is in the air today, which depends on weather, wind and rain. It is not medical advice. Species absent from the list are not marked safe, only not listed."],
+    polListN:     ["यादीत प्रजाती", "on the list"],
+    polSource:    ["यादीचा स्रोत", "List source"],
+
+    acEyebrow:    ["CIVIC ACTION", "CIVIC ACTION"],
+    acH:          ["प्रभागासाठी कृती", "Act on your ward"],
+    acSub:        ["२०१९ चा आकडा हा तुमचा आधार आहे. महापालिकेला विचारा की तेव्हापासून काय बदललं.",
+                   "The 2019 count is your baseline. Use it to ask PMC what has changed since."],
+    acPick:       ["प्रभाग निवडा", "Choose your ward"],
+    acBaseline:   ["२०१९ चा आधार", "2019 BASELINE"],
+    acRtiT:       ["माहिती अधिकार अर्ज", "RTI application"],
+    acRtiD:       ["कॉपी करा, नाव आणि पत्ता भरा, आणि पुणे महानगरपालिकेच्या जन माहिती अधिकाऱ्यांकडे द्या.",
+                   "Copy it, fill in your name and address, and submit it to the Public Information Officer, Pune Municipal Corporation."],
+    acLetT:       ["प्रभाग कार्यालयाला पत्र", "Letter to your ward office"],
+    acLetD:       ["ईमेल करा किंवा छापून द्या. स्वतःच्या शब्दांत एक ओळ जोडा, तीच सर्वात महत्त्वाची.",
+                   "Email it or print it. Add one line in your own words. That line matters more than the rest."],
+    acHowT:       ["माहिती अधिकार कसा दाखल करायचा", "How to file an RTI"],
+    acHow1:       ["अर्ज पुणे महानगरपालिकेच्या जन माहिती अधिकाऱ्यांच्या नावे लिहा.",
+                   "Address the application to the Public Information Officer, Pune Municipal Corporation."],
+    acHow2:       ["फी १० रुपये. दारिद्र्यरेषेखालील अर्जदारांना फी नाही, कार्डाची प्रत जोडा.",
+                   "The fee is Rs 10. Applicants below the poverty line pay nothing, on production of a BPL card copy."],
+    acHow3:       ["उत्तर ३० दिवसांत यायला हवं.", "They must respond within 30 days."],
+    acHow4:       ["उत्तर न आल्यास किंवा असमाधानकारक असल्यास ३० दिवसांत कलम १९(१) खाली पहिलं अपील करा.",
+                   "If they do not reply, or the reply is unsatisfactory, file a first appeal within 30 days under section 19(1)."],
+    acHow5:       ["महाराष्ट्रातील सर्व महापालिका केंद्रीय ऑनलाइन पोर्टलवर नाहीत, त्यामुळे थेट महापालिकेकडे देणं खात्रीचं.",
+                   "Maharashtra municipal corporations are not all integrated with the central online RTI portal, so filing directly with PMC is the reliable route."],
+    acDisc:       ["हा नमुना आहे, कायदेशीर सल्ला नाही. फी भरण्यापूर्वी महापालिकेची सध्याची पद्धत आणि पत्ता तपासा.",
+                   "This is a template, not legal advice. Check PMC's current procedure and address before paying a fee or submitting."],
+    acCopyRti:    ["अर्ज कॉपी करा", "Copy RTI text"],
+    acCopyLet:    ["पत्र कॉपी करा", "Copy letter"],
     madeBy:       ["MADE BY", "MADE BY"],
     madeName:     ["शमा ठाकूर", "Shama Thakur"],
     madeLine:     ["डेटा अ‍ॅनालिस्ट · नाशिक ते स्टॉकहोम. हा नकाशा फुकट आहे आणि फुकटच राहील.",
@@ -140,7 +183,7 @@
 
   var S = {
     meta:null, species:null, wards:null, names:null, tileIndex:null,
-    rare:null, giants:null,
+    rare:null, giants:null, pollen:null, pollenSet:null,
     tilesLoaded:{}, cellLayer:null, rareLayer:null, giantLayer:null,
     map:null, renderer:null, base:null, labels:null,
     month:new Date().getMonth() + 1,
@@ -221,6 +264,7 @@
     if (S.meta) {
       renderMapPanel(); renderMonths(); renderFlowering();
       renderWards(); buildFacts(); renderTreasures();
+      renderPollen(); buildWardPicker(); renderAct();
     }
   }
 
@@ -238,6 +282,11 @@
     $("tab-treasure").textContent = t("tabTreasure");
     $("tab-ward").textContent     = t("tabWard");
     $("tab-facts").textContent    = t("tabFacts");
+    $("tab-act").textContent      = t("tabAct");
+    $("ac-eyebrow").textContent = t("acEyebrow");
+    $("ac-h").textContent       = t("acH");
+    $("ac-sub").textContent     = t("acSub");
+    $("ac-pick").textContent    = t("acPick");
     $("fl-eyebrow").textContent = t("flEyebrow");
     $("fl-h").textContent       = t("flH");
     $("fl-sub").textContent     = t("flSub");
@@ -614,6 +663,7 @@
           "<span class='val'>" + nf(s.n) + "<small>" + esc(s.e || "") + "</small></span></li>";
       }).join("") + "</ul></div>" +
       (hits.length > 60 ? "<p class='sub' style='margin:12px 0 0'>" + t("showingTop", {n:60}) + "</p>" : "");
+    renderPollen();
   }
 
   // ------------------------------------------------------------------ wards --
@@ -807,8 +857,313 @@
     $("lg-hi").textContent = nf(S.tileIndex.max_cell_count);
   }
 
+
+  // ------------------------------------------- pollen / respiratory season --
+  /* Match a census botanical string against the curated list. Census names
+     carry authorities ("Prosopis juliflora (Sw.)Dc."), so compare on genus +
+     species only. A species not on the list is NOT marked safe; it is simply
+     absent from the published list this site cites. */
+  function isAeroallergen(botanical) {
+    if (!S.pollenSet) return false;
+    var k = String(botanical || "").toLowerCase().replace(/\s+/g, " ").trim();
+    if (S.pollenSet[k]) return true;
+    var bits = k.replace("var.", " ").replace("subsp.", " ").split(" ");
+    return bits.length >= 2 && !!S.pollenSet[bits[0] + " " + bits[1]];
+  }
+
+  function allergenSpeciesFor(month) {
+    return S.species.species.filter(function (sp) {
+      return sp.fm && sp.fm.indexOf(month) !== -1 && isAeroallergen(sp.b);
+    }).sort(function (a, b) { return b.n - a.n; });
+  }
+
+  function renderPollen() {
+    var host = $("pollen");
+    if (!host) return;
+    if (!S.pollen || !S.species) { host.innerHTML = ""; return; }
+
+    var hits = allergenSpeciesFor(S.month);
+    var trees = hits.reduce(function (a, sp) { return a + sp.n; }, 0);
+    var share = S.meta.totals.rows ? 100 * trees / S.meta.totals.rows : 0;
+
+    // season shape: listed species flowering in each month of the year
+    var byMonth = [], maxM = 0;
+    for (var m = 1; m <= 12; m++) {
+      var c = allergenSpeciesFor(m).length;
+      byMonth.push(c);
+      if (c > maxM) maxM = c;
+    }
+    var bars = byMonth.map(function (c, i) {
+      var h = maxM ? Math.max(3, Math.round((c / maxM) * 100)) : 3;
+      var on = (i + 1) === S.month;
+      return "<button class='pbar" + (on ? " on" : "") + "' data-m='" + (i + 1) + "' " +
+        "title='" + esc(mon(i)) + ": " + c + "'>" +
+        "<i style='height:" + h + "%'></i><span>" + MON_SHORT[i].charAt(0) + "</span></button>";
+    }).join("");
+
+    var notable = (S.pollen.notable || {});
+    var rows = hits.slice(0, 12).map(function (sp) {
+      var k = String(sp.b).toLowerCase().split(" ").slice(0, 2).join(" ");
+      var note = notable[k];
+      return "<li><span class='grow'><span class='nm'>" + esc(spName(sp)) + "</span>" +
+        "<div class='sci'>" + esc(sp.b) + "</div>" +
+        (note ? "<div class='pnote'>" + esc(note) + "</div>" : "") +
+        "</span><span class='val'>" + nf(sp.n) + "</span></li>";
+    }).join("");
+
+    host.innerHTML =
+      "<p class='eyebrow' style='margin-top:30px'>" + t("polEyebrow") + "</p>" +
+      "<h3 class='h' style='font-size:1.14rem'>" + t("polH") + "</h3>" +
+      (hits.length
+        ? "<div class='hero' style='padding:10px 0 18px'>" +
+            "<div class='big num' style='font-size:clamp(2.2rem,11vw,3rem)'>" + nf(hits.length) + "</div>" +
+            "<div class='cap' style='font-size:.92rem'>" + t("polCount") + "</div>" +
+          "</div>" +
+          "<div class='metrics'>" +
+            "<div class='metric'><div class='v num'>" + nf(trees) + "</div><div class='k'>" + t("trees") + "</div></div>" +
+            "<div class='metric'><div class='v num'>" + pct(share, share < 1 ? 2 : 0) + "</div><div class='k'>" + t("cityShare") + "</div></div>" +
+            "<div class='metric'><div class='v num'>" + nf(S.pollen.documented_aeroallergen.length) + "</div><div class='k'>" + t("polListN") + "</div></div>" +
+          "</div>" +
+          "<div class='card flush'><ul class='rows'>" + rows + "</ul></div>"
+        : "<div class='card'><div class='nm'>" + t("polNone") + "</div></div>") +
+      "<p class='eyebrow' style='margin-top:22px'>" + t("polSeason") + "</p>" +
+      "<div class='pchart'>" + bars + "</div>" +
+      "<div class='card' style='font-size:.82rem;color:var(--txt-2);margin-top:14px'>" +
+        esc(t("polShowy")) + "</div>" +
+      "<div class='warncard'><b>⚠ " + esc(t("polWarnT")) + "</b><p>" + esc(t("polWarn")) + "</p>" +
+        "<p style='margin-top:8px'><a href='" + esc(S.pollen.source.url) + "' target='_blank' rel='noopener'>" +
+        esc(S.pollen.source.title) + "</a><br><span style='color:var(--txt-3)'>" +
+        esc(S.pollen.source.journal) + "</span></p></div>";
+
+    host.querySelectorAll(".pbar").forEach(function (b) {
+      b.addEventListener("click", function () {
+        S.month = parseInt(b.dataset.m, 10);
+        renderMonths(); renderFlowering();
+      });
+    });
+  }
+
+  // ------------------------------------------------------ civic action / RTI --
+  function buildWardPicker() {
+    var sel = $("wardpick");
+    if (!sel || !S.wards) return;
+    var ws = S.wards.wards.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    sel.innerHTML = ws.map(function (w) {
+      return "<option value='" + esc(w.k) + "'>" + esc(w.name) + "</option>";
+    }).join("");
+    if (!sel._wired) {
+      sel.addEventListener("change", renderAct);
+      sel._wired = true;
+    }
+  }
+
+  function currentWard() {
+    var sel = $("wardpick");
+    if (!sel || !S.wards) return null;
+    var k = sel.value;
+    for (var i = 0; i < S.wards.wards.length; i++) {
+      if (S.wards.wards[i].k === k) return S.wards.wards[i];
+    }
+    return S.wards.wards[0];
+  }
+
+  function rtiText(w) {
+    var top = (w.top || []).slice(0, 3).map(function (x) { return sciOf(x.k) || x.k; }).join(", ");
+    var today = new Date().toISOString().slice(0, 10);
+    if (S.lang === 0) {
+      return [
+        "प्रति,",
+        "जन माहिती अधिकारी",
+        "पुणे महानगरपालिका, पुणे",
+        "",
+        "विषय: माहिती अधिकार अधिनियम २००५ अंतर्गत माहिती मिळणेबाबत — प्रभाग " + w.name,
+        "",
+        "महोदय,",
+        "",
+        "पुणे महानगरपालिकेच्या २०१९ च्या वृक्ष गणनेनुसार प्रभाग " + w.name + " मध्ये " +
+          nf(w.n) + " झाडांची नोंद आहे (स्रोत: PMC वृक्ष गणना २०१९, OpenCity मार्फत प्रसिद्ध).",
+        "या आधारावर खालील माहिती मिळावी ही विनंती:",
+        "",
+        "१. आज रोजी प्रभाग " + w.name + " मध्ये महापालिकेच्या नोंदीनुसार किती झाडं आहेत? ही नोंद शेवटची कधी अद्ययावत करण्यात आली?",
+        "",
+        "२. महाराष्ट्र (नागरी क्षेत्रे) वृक्ष संरक्षण व संवर्धन अधिनियम १९७५ अंतर्गत, १ ऑगस्ट २०१९ ते " + today +
+          " या कालावधीत प्रभाग " + w.name + " मध्ये वृक्षतोडीच्या किती परवानग्या देण्यात आल्या? वर्षनिहाय आकडेवारी द्यावी.",
+        "",
+        "३. या परवानग्यांखाली किती झाडं तोडण्यास मान्यता होती, आणि अट म्हणून किती पर्यायी झाडं लावणे बंधनकारक होते?",
+        "",
+        "४. त्यापैकी प्रत्यक्षात किती पर्यायी झाडं लावण्यात आली, कोणत्या ठिकाणी, आणि शेवटच्या पाहणीत त्यातील किती जिवंत आढळली?",
+        "",
+        "५. ज्या वृक्ष प्राधिकरण बैठकांमध्ये या परवानग्या मंजूर झाल्या, त्यांच्या इतिवृत्ताच्या प्रती द्याव्यात.",
+        "",
+        "६. २०१९ नंतर नवीन वृक्ष गणना प्रस्तावित आहे किंवा सुरू आहे का? असल्यास मंजुरी आदेश व कालमर्यादा द्यावी.",
+        "",
+        "माहिती लेखी स्वरूपात मिळावी. विहित शुल्क सोबत जोडले आहे.",
+        "",
+        "आपला विश्वासू,",
+        "नाव: ____________________",
+        "पत्ता: ____________________",
+        "दिनांक: " + today,
+        "",
+        "(संदर्भ नकाशा: punetreemap.vercel.app)"
+      ].join("\n");
+    }
+    return [
+      "To,",
+      "The Public Information Officer",
+      "Pune Municipal Corporation, Pune",
+      "",
+      "Subject: Application under the Right to Information Act, 2005 — trees in " + w.name + " ward",
+      "",
+      "Sir / Madam,",
+      "",
+      "As per the Pune Municipal Corporation Tree Census of 2019, " + w.name + " ward has " +
+        nf(w.n) + " recorded trees" + (top ? ", the most common being " + top : "") +
+        " (source: PMC Tree Census 2019, published via OpenCity).",
+      "Using that as a baseline, I request the following information:",
+      "",
+      "1. How many trees are currently recorded by the Corporation in " + w.name + " ward, and on what date was that record last updated?",
+      "",
+      "2. Under the Maharashtra (Urban Areas) Protection and Preservation of Trees Act, 1975, how many tree felling permissions were granted in " +
+        w.name + " ward between 1 August 2019 and " + today + "? Please provide year-wise figures.",
+      "",
+      "3. How many trees were permitted to be felled under those permissions, and how many compensatory trees were required as a condition of them?",
+      "",
+      "4. Of those, how many compensatory trees were actually planted, at what locations, and how many were found alive at the most recent survey?",
+      "",
+      "5. Please provide copies of the minutes of the Tree Authority meetings at which those permissions were granted.",
+      "",
+      "6. Is a new tree census planned or under way after 2019? If yes, please provide the sanction order and the timeline.",
+      "",
+      "I request this information in writing. The prescribed fee is enclosed.",
+      "",
+      "Yours faithfully,",
+      "Name: ____________________",
+      "Address: ____________________",
+      "Date: " + today,
+      "",
+      "(Reference map: punetreemap.vercel.app)"
+    ].join("\n");
+  }
+
+  function letterText(w) {
+    var natLine = w.native_pct !== null
+      ? (S.lang === 0
+          ? "ओळखता आलेल्या झाडांपैकी " + pct(w.native_pct, 0) + " देशी आहेत."
+          : "Of the trees that could be classified, " + pct(w.native_pct, 0) + " are native to the subcontinent.")
+      : "";
+    if (S.lang === 0) {
+      return [
+        "विषय: प्रभाग " + w.name + " मधील वृक्षसंपदेबाबत",
+        "",
+        "महोदय / महोदया,",
+        "",
+        "मी प्रभाग " + w.name + " मधील रहिवासी आहे.",
+        "",
+        "पुणे महानगरपालिकेच्या २०१९ च्या वृक्ष गणनेनुसार आपल्या प्रभागात " + nf(w.n) +
+          " झाडांची नोंद होती. " + natLine,
+        "ही गणना सहा वर्षं जुनी आहे आणि त्यानंतरची कोणतीही अद्ययावत आकडेवारी जाहीरपणे उपलब्ध नाही.",
+        "",
+        "माझी विनंती अशी:",
+        "१. २०१९ नंतर या प्रभागात किती झाडं तोडली गेली आणि किती लावली गेली, याची आकडेवारी जाहीर करावी.",
+        "२. पर्यायी वृक्षारोपणाच्या अटींची पूर्तता झाली का, याची माहिती द्यावी.",
+        "३. नवीन वृक्ष गणनेचं नियोजन असल्यास त्याची कालमर्यादा जाहीर करावी.",
+        "",
+        "[इथे स्वतःच्या शब्दांत एक ओळ लिहा — तुमच्या रस्त्यावर काय बदललं, कोणतं झाड गेलं.]",
+        "",
+        "धन्यवाद,",
+        "नाव: ____________________",
+        "पत्ता: ____________________",
+        "",
+        "संदर्भ: PMC वृक्ष गणना २०१९, OpenCity मार्फत · punetreemap.vercel.app"
+      ].join("\n");
+    }
+    return [
+      "Subject: Tree cover in " + w.name + " ward",
+      "",
+      "Dear Sir / Madam,",
+      "",
+      "I am a resident of " + w.name + " ward.",
+      "",
+      "According to the Pune Municipal Corporation Tree Census of 2019, this ward had " +
+        nf(w.n) + " recorded trees. " + natLine,
+      "That census is now six years old, and no updated figure has been published since.",
+      "",
+      "I would like to request:",
+      "1. Publication of how many trees have been felled and how many planted in this ward since 2019.",
+      "2. Information on whether the compensatory planting conditions attached to felling permissions were met.",
+      "3. The timeline for a new tree census, if one is planned.",
+      "",
+      "[Add one line here in your own words. What changed on your street, which tree went.]",
+      "",
+      "Thank you,",
+      "Name: ____________________",
+      "Address: ____________________",
+      "",
+      "Source: PMC Tree Census 2019 via OpenCity · punetreemap.vercel.app"
+    ].join("\n");
+  }
+
+  function copyBtn(id, label) {
+    return "<button class='btn primary' id='" + id + "'>" + esc(label) + "</button>";
+  }
+  function wireCopy(id, getText) {
+    var b = $(id);
+    if (!b) return;
+    b.addEventListener("click", function () {
+      if (!navigator.clipboard) return;
+      navigator.clipboard.writeText(getText()).then(function () {
+        var o = b.textContent; b.textContent = t("copied");
+        setTimeout(function () { b.textContent = o; }, 1800);
+      });
+    });
+  }
+
+  function renderAct() {
+    if (!S.wards) return;
+    var w = currentWard();
+    if (!w) return;
+    var top = (w.top || []).slice(0, 3).map(function (x) { return esc(nameOf(x.k)); }).join(" · ");
+
+    $("actbrief").innerHTML =
+      "<p class='eyebrow' style='margin-top:18px'>" + t("acBaseline") + "</p>" +
+      "<div class='hero' style='padding:6px 0 18px'>" +
+        "<div class='big num'>" + nf(w.n) + "</div>" +
+        "<div class='cap'>" + esc(w.name) + " · " + t("trees") + "</div>" +
+      "</div>" +
+      "<div class='metrics'>" +
+        "<div class='metric'><div class='v num'>" +
+          (w.native_pct !== null ? pct(w.native_pct, 0) : "—") + "</div><div class='k'>" + t("native") + "</div></div>" +
+        "<div class='metric'><div class='v num'>" +
+          (w.healthy_pct !== null ? pct(w.healthy_pct, 0) : "—") + "</div><div class='k'>" + t("healthy") + "</div></div>" +
+        "<div class='metric'><div class='v num'>" + nf(w.unknown_nativity) + "</div><div class='k'>" + t("unknown") + "</div></div>" +
+      "</div>" +
+      (top ? "<div class='card' style='font-size:.84rem;color:var(--txt-2)'>" + top + "</div>" : "");
+
+    $("actdocs").innerHTML =
+      "<div class='doc'><div class='doct'>" + t("acRtiT") + "</div>" +
+        "<p class='sub' style='margin:6px 0 12px'>" + t("acRtiD") + "</p>" +
+        "<pre class='docbody' id='rtibody'>" + esc(rtiText(w)) + "</pre>" +
+        "<div class='acts'>" + copyBtn("cp-rti", t("acCopyRti")) + "</div></div>" +
+      "<div class='doc'><div class='doct'>" + t("acLetT") + "</div>" +
+        "<p class='sub' style='margin:6px 0 12px'>" + t("acLetD") + "</p>" +
+        "<pre class='docbody' id='letbody'>" + esc(letterText(w)) + "</pre>" +
+        "<div class='acts'>" + copyBtn("cp-let", t("acCopyLet")) + "</div></div>";
+
+    $("acthow").innerHTML =
+      "<p class='eyebrow' style='margin-top:26px'>" + t("acHowT") + "</p>" +
+      "<div class='card flush'><ul class='rows'>" +
+      ["acHow1","acHow2","acHow3","acHow4","acHow5"].map(function (k, i) {
+        return "<li><span class='rank'>" + (i + 1) + "</span><span class='grow'>" +
+          "<span style='font-size:.86rem'>" + esc(t(k)) + "</span></span></li>";
+      }).join("") + "</ul></div>" +
+      "<div class='warncard'><b>⚠</b><p>" + esc(t("acDisc")) + "</p></div>";
+
+    wireCopy("cp-rti", function () { return rtiText(currentWard()); });
+    wireCopy("cp-let", function () { return letterText(currentWard()); });
+  }
+
   // ------------------------------------------------------------------ tabs --
-  var TABS = ["map","flower","treasure","ward","facts"];
+  var TABS = ["map","flower","treasure","ward","facts","act"];
   function selectTab(name) {
     S.tab = name;
     TABS.forEach(function (n) {
@@ -825,6 +1180,7 @@
         if (S.snap === "peek") setSnap("half");
         if (n === "treasure") renderTreasures();
         if (n === "flower") centreMonth();
+        if (n === "act") renderAct();
       });
     });
     $("honest").addEventListener("click", function () {
@@ -897,7 +1253,21 @@
   ]).then(function (r) {
     S.meta = r[0]; S.species = r[1]; S.wards = r[2]; S.names = r[3]; S.tileIndex = r[4];
     initMap(); wireSheet(); wireUI(); setSnap("half", false);
-    renderMapPanel(); renderMonths(); renderFlowering(); renderWards(); buildFacts(); paintRamp();
+    renderMapPanel(); renderMonths(); renderWards(); buildFacts(); paintRamp();
+    buildWardPicker(); renderAct();
+    /* The aeroallergen reference is optional. If it fails, the Bloom tab
+       simply omits the pollen section rather than the page breaking. */
+    fetch("pollen.json", { cache: "no-cache" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j) return;
+        S.pollen = j;
+        S.pollenSet = {};
+        (j.documented_aeroallergen || []).forEach(function (n) { S.pollenSet[n] = 1; });
+        renderPollen();
+      })
+      .catch(function () {});
+    renderFlowering();
     $("boot").classList.add("gone");
     setTimeout(function () { var b = $("boot"); if (b) b.remove(); }, 500);
     idlePrewarm();

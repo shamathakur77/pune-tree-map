@@ -1,0 +1,85 @@
+{
+  "_README": [
+    "PLEASE READ BEFORE TRUSTING ANYTHING THIS FILE DRIVES.",
+    "",
+    "This is NOT a pollen measurement. Pune has no live open pollen-count feed.",
+    "Nothing here tells you what is in the air on any given day.",
+    "",
+    "What it is: a list of tree species that are NAMED AS AEROALLERGENS IN THE",
+    "PUBLISHED INDIAN ALLERGY LITERATURE, cross-referenced against the species",
+    "the PMC census actually recorded in Pune, and against the months the census",
+    "records those species as flowering.",
+    "",
+    "So the honest claim the site makes is narrow and checkable:",
+    "  'These species are recorded as flowering in Pune this month, and these",
+    "   ones appear in the Indian aeroallergen literature.'",
+    "",
+    "It is NOT:",
+    "  - a pollen count",
+    "  - a forecast",
+    "  - an air quality index",
+    "  - medical advice, or a substitute for seeing an allergist",
+    "",
+    "Actual airborne pollen on a given day depends on weather, wind, rain,",
+    "temperature and time of day, none of which is in this dataset. A tree",
+    "flowering in the census month does not mean its pollen is in the air today.",
+    "",
+    "Species NOT on this list are not marked as safe. They are marked as",
+    "not-listed, which is a statement about this list, not about the tree.",
+    "",
+    "Corrections welcome as a pull request against this one file."
+  ],
+
+  "source": {
+    "title": "Aeroallergens in Clinical Practice of Allergy in India — ARIA Asia Pacific Workshop Report",
+    "journal": "Asian Pacific Journal of Allergy and Immunology, Vol 26 No 4, December 2008, p245",
+    "url": "https://apjai-journal.org/wp-content/uploads/2017/12/9AeroallergensinClinicalPracticeVol26No4December2008P245.pdf",
+    "note": "Tree species named in that report as aeroallergens in India. Names below are lowercased genus + species for matching, and include spelling variants as the census records them."
+  },
+
+  "notable": {
+    "prosopis juliflora": "Identified as a major cause of pollinosis in India, with 12% of patients showing a positive skin reaction.",
+    "holoptelea integrifolia": "Described as an important pollen allergen of India, and among the dominant airborne types in northern India.",
+    "morus alba": "Among the major contributors in Delhi airborne-pollen surveys.",
+    "casuarina equisetifolia": "Among the dominant airborne pollen types reported in northern India.",
+    "cedrus deodara": "Reported as an allergen in Himalayan patients."
+  },
+
+  "documented_aeroallergen": [
+    "ailanthus excelsa",
+    "anogeissus pendula",
+    "bauhinia variegata",
+    "carica papaya",
+    "casuarina equisetifolia",
+    "cassia siamea",
+    "senna siamea",
+    "cedrus deodara",
+    "cocos nucifera",
+    "eucalyptus camaldulensis",
+    "eucalyptus globulus",
+    "eucalyptus tereticornis",
+    "eucalyptus citriodora",
+    "eucalyptus hybrid",
+    "holoptelea integrifolia",
+    "holoptelia integrifolia",
+    "mallotus philippensis",
+    "mallotus phillipensis",
+    "morus alba",
+    "morus indica",
+    "morus nigra",
+    "phoenix sylvestris",
+    "prosopis juliflora",
+    "putranjiva roxburghii",
+    "quercus incana",
+    "salvadora persica"
+  ],
+
+  "_showy_not_listed": [
+    "The showiest flowering trees in Pune are largely insect-pollinated and do",
+    "NOT appear in the aeroallergen list above — Delonix regia (Gulmohar),",
+    "Cassia fistula (Bahava), Tabebuia, Plumeria, Spathodea. Their absence from",
+    "the list is not proof they are harmless; it means the report did not name",
+    "them. But it is why the tree that looks most dramatic in flower is often",
+    "not the one behind a streaming nose."
+  ]
+}
