@@ -43,7 +43,7 @@
       <button class="pill icon" id="theme" aria-label="Light or dark">◐</button>
     </div>
     <button class="honest" id="honest" aria-expanded="false">
-      <span id="honestShort"></span> <span class="caret">▾</span>
+      <span id="honestShort"></span>
       <span class="more" id="honestMore"></span>
     </button>
   </div>
@@ -91,9 +91,13 @@
       <p class="eyebrow" id="fl-eyebrow"></p>
       <h2 class="h" id="fl-h"></h2>
       <p class="sub" id="fl-sub"></p>
+      <div class="segctl">
+        <button id="bv-flowers" aria-pressed="true"></button>
+        <button id="bv-pollen"  aria-pressed="false"></button>
+      </div>
       <div class="months" id="months" role="group"></div>
-      <div id="flowerlist"></div>
       <div id="pollen"></div>
+      <div id="flowerlist"></div>
     </section>
 
     <section class="panel" id="p-treasure" role="tabpanel" aria-labelledby="tab-treasure" hidden>
@@ -141,7 +145,12 @@
 </div>
 
 <div id="boot">
-  <div class="spin"></div>
+  <svg class="sprout" viewBox="0 0 32 40" fill="none" stroke="currentColor"
+       stroke-width="1.1" stroke-linecap="round" aria-hidden="true">
+    <path d="M16 38V16"/>
+    <path d="M16 20c0-6 4-11 11-12 .8 6.6-3.4 12-11 12Z"/>
+    <path d="M16 26c-6 0-9.6-4.4-9-10.5C13 16.4 16 20.6 16 26Z"/>
+  </svg>
   <div class="bl">झाडं मोजतो आहे…</div>
   <div class="bs">Loading 4 million trees</div>
 </div>

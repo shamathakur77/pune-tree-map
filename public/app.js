@@ -12,7 +12,10 @@
 
   var DATA = "data/";
   var PUNE = [18.5204, 73.8567];
-  var RARE_MIN_ZOOM = 14;   // 12,000 gold dots at city zoom hides the city
+  var RARE_MIN_ZOOM = 14;
+  /* Read once, at script start. Boot calls setBloomView/selectTab, both of
+     which write the hash, so by the time readHash runs the original is gone. */
+  var INITIAL_HASH = (location.hash || "").replace("#", "").toLowerCase();   // 12,000 gold dots at city zoom hides the city
 
   // ------------------------------------------------------------- strings ---
   var T = {
@@ -112,6 +115,11 @@
                    "Pune has no live open pollen-count feed. All this shows is which species the census records as flowering this month, and which of those appear in the published Indian aeroallergen literature. It cannot tell you what is in the air today, which depends on weather, wind and rain. It is not medical advice. Species absent from the list are not marked safe, only not listed."],
     polListN:     ["यादीत प्रजाती", "on the list"],
     polSource:    ["यादीचा स्रोत", "List source"],
+    bvFlowers:    ["फुलं", "Blooms"],
+    bvPollen:     ["श्वसन", "Breathing"],
+    polShare:     ["ॲलर्जी असणाऱ्यांना पाठवा", "Send to someone with allergies"],
+    polShareTxt:  ["{n} प्रजाती {m} मध्ये फुलतात आणि भारतीय ॲलर्जी संशोधनात नोंदल्या आहेत. पुण्याच्या वृक्ष गणनेवर आधारित, मोफत नकाशा:",
+                   "{n} species flowering in Pune in {m} appear in the Indian aeroallergen literature. Free map, built from the city's tree census:"],
 
     acEyebrow:    ["CIVIC ACTION", "CIVIC ACTION"],
     acH:          ["प्रभागासाठी कृती", "Act on your ward"],
@@ -188,7 +196,7 @@
     map:null, renderer:null, base:null, labels:null,
     month:new Date().getMonth() + 1,
     treasureMode:"rare", wardSort:"count", tab:"map",
-    theme:"dark", lang:0, snap:"half",
+    theme:"light", lang:0, snap:"half", bloomView:"flowers",
     rareWanted:false
   };
 
@@ -270,7 +278,7 @@
 
   function paintStatic() {
     $("brandName").textContent = t("brand");
-    $("honestShort").innerHTML = t("honestShort");
+    $("honestShort").innerHTML = t("honestShort") + "&nbsp;<span class='caret'>▾</span>";
     $("honestMore").textContent = t("honestMore");
     $("tg-grid").querySelector("span").textContent   = t("grid");
     $("tg-rare").querySelector("span").textContent   = t("rare");
@@ -302,6 +310,8 @@
     $("fa-eyebrow").textContent = t("faEyebrow");
     $("fa-h").textContent       = t("faH");
     $("fa-sub").textContent     = t("faSub");
+    $("bv-flowers").textContent = t("bvFlowers");
+    $("bv-pollen").textContent  = t("bvPollen");
     $("zoomhint").textContent   = t("rareZoomHint");
   }
 
@@ -625,6 +635,17 @@
     });
     centreMonth();
   }
+  function setBloomView(v) {
+    S.bloomView = v;
+    $("bv-flowers").setAttribute("aria-pressed", String(v === "flowers"));
+    $("bv-pollen").setAttribute("aria-pressed", String(v === "pollen"));
+    $("flowerlist").hidden = v !== "flowers";
+    $("pollen").hidden     = v !== "pollen";
+    $("panels").scrollTop = 0;
+    writeHash();
+    centreMonth();
+  }
+
   function centreMonth() {
     var host = $("months");
     if (!host || host.offsetParent === null) return;
@@ -835,9 +856,16 @@
         t("ofClassified", {p: pct(100*nat.native/known, 0)}) + "</p>" : "") +
       "<div class='card' style='margin-top:12px;font-size:.78rem;color:var(--txt-2)'>⚠ " + esc(nat.warning) + "</div>";
 
-    $("credits").innerHTML =
+    var LEAF_RULE =
+      "<div class='botrule'><svg viewBox='0 0 32 32' fill='none' stroke='currentColor' " +
+      "stroke-width='1' stroke-linecap='round'>" +
+      "<path d='M16 28V9'/><path d='M16 14c0-4.6 3-8.4 8.4-9.2C25 9.8 21.7 14 16 14Z'/>" +
+      "<path d='M16 20c-4.6 0-7.4-3.4-6.9-8.1C13.6 12.6 16 15.7 16 20Z'/>" +
+      "<path d='M16 25c3.9 0 6.3-2.9 5.9-6.9C18.1 18.6 16 21.3 16 25Z'/></svg></div>";
+
+    $("credits").innerHTML = LEAF_RULE +
       "<div class='made'><div class='mk'>" + t("madeBy") + "</div>" +
-      "<div class='mn'>" + t("madeName") + "</div>" +
+      "<div class='sig'>" + t("madeName") + "</div>" +
       "<p class='mr2'>" + t("madeLine") + "</p><div class='links'>" +
       LINKS.map(function (l) {
         return "<a href='" + esc(l.url) + "' target='_blank' rel='noopener'" +
@@ -928,12 +956,24 @@
         : "<div class='card'><div class='nm'>" + t("polNone") + "</div></div>") +
       "<p class='eyebrow' style='margin-top:22px'>" + t("polSeason") + "</p>" +
       "<div class='pchart'>" + bars + "</div>" +
-      "<div class='card' style='font-size:.82rem;color:var(--txt-2);margin-top:14px'>" +
+      "<div class='card' style='margin-top:16px;font-family:var(--serif);font-size:.88rem;color:var(--ink-2)'>" +
         esc(t("polShowy")) + "</div>" +
+      "<div class='acts'><button class='btn primary' id='pol-share'>" + esc(t("polShare")) + "</button></div>" +
       "<div class='warncard'><b>⚠ " + esc(t("polWarnT")) + "</b><p>" + esc(t("polWarn")) + "</p>" +
         "<p style='margin-top:8px'><a href='" + esc(S.pollen.source.url) + "' target='_blank' rel='noopener'>" +
         esc(S.pollen.source.title) + "</a><br><span style='color:var(--txt-3)'>" +
         esc(S.pollen.source.journal) + "</span></p></div>";
+
+    var sh = $("pol-share");
+    if (sh) sh.addEventListener("click", function () {
+      var txt = t("polShareTxt", { n: hits.length, m: mon(S.month - 1) }) + "\n" +
+                location.origin + location.pathname + "#pollen";
+      if (navigator.share) navigator.share({ title: t("polH"), text: txt }).catch(function () {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () {
+        var o = sh.textContent; sh.textContent = t("copied");
+        setTimeout(function () { sh.textContent = o; }, 1800);
+      });
+    });
 
     host.querySelectorAll(".pbar").forEach(function (b) {
       b.addEventListener("click", function () {
@@ -1164,6 +1204,23 @@
 
   // ------------------------------------------------------------------ tabs --
   var TABS = ["map","flower","treasure","ward","facts","act"];
+
+  /* Shareable deep links. #pollen is the one that matters: it opens the
+     breathing view directly, so the link can be sent to someone who needs
+     exactly that and nothing else. */
+  var HASH = { map:"map", flower:"bloom", treasure:"treasure", ward:"wards", facts:"facts", act:"act" };
+  function writeHash() {
+    var h = S.tab === "flower" && S.bloomView === "pollen" ? "pollen" : HASH[S.tab];
+    if (("#" + h) !== location.hash) {
+      try { history.replaceState(null, "", "#" + h); } catch (e) {}
+    }
+  }
+  function readHash(forced) {
+    var h = forced != null ? forced : (location.hash || "").replace("#", "").toLowerCase();
+    if (!h) return;
+    if (h === "pollen") { selectTab("flower"); setBloomView("pollen"); return; }
+    for (var k in HASH) if (HASH[k] === h) { selectTab(k); break; }
+  }
   function selectTab(name) {
     S.tab = name;
     TABS.forEach(function (n) {
@@ -1171,6 +1228,7 @@
       $("p-" + n).hidden = n !== name;
     });
     $("panels").scrollTop = 0;
+    writeHash();
   }
 
   function wireUI() {
@@ -1183,6 +1241,10 @@
         if (n === "act") renderAct();
       });
     });
+    $("bv-flowers").addEventListener("click", function () { setBloomView("flowers"); });
+    $("bv-pollen").addEventListener("click", function () { setBloomView("pollen"); renderPollen(); });
+    window.addEventListener("hashchange", function () { readHash(); });
+
     $("honest").addEventListener("click", function () {
       var b = $("honest");
       b.setAttribute("aria-expanded", b.getAttribute("aria-expanded") === "true" ? "false" : "true");
@@ -1244,7 +1306,7 @@
   }
 
   // ------------------------------------------------------------------ boot --
-  applyTheme(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  applyTheme(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   applyLang(0);
 
   Promise.all([
@@ -1254,6 +1316,7 @@
     S.meta = r[0]; S.species = r[1]; S.wards = r[2]; S.names = r[3]; S.tileIndex = r[4];
     initMap(); wireSheet(); wireUI(); setSnap("half", false);
     renderMapPanel(); renderMonths(); renderWards(); buildFacts(); paintRamp();
+    setBloomView("flowers");
     buildWardPicker(); renderAct();
     /* The aeroallergen reference is optional. If it fails, the Bloom tab
        simply omits the pollen section rather than the page breaking. */
@@ -1268,6 +1331,8 @@
       })
       .catch(function () {});
     renderFlowering();
+    readHash(INITIAL_HASH);   // honour a #pollen / #act deep link on first paint
+    setTimeout(centreMonth, 60);
     $("boot").classList.add("gone");
     setTimeout(function () { var b = $("boot"); if (b) b.remove(); }, 500);
     idlePrewarm();
