@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# The underlying data is open. Source: Pune Municipal Corporation Tree Census
+# 2019, published by OpenCity at
+# https://data.opencity.in/dataset/pune-tree-census-2019
