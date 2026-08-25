@@ -1,0 +1,71 @@
+name: Build census data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 1 * *"
+
+concurrency:
+  group: build-data
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download the census (fails loudly on any missing part)
+        run: python3 scripts/fetch_data.py --out raw
+
+      - name: Aggregate into static JSON
+        run: python3 scripts/aggregate.py --raw raw --out public/data
+
+      - name: Verify the outputs are real
+        run: |
+          python3 - <<'PY'
+          import json, sys, pathlib
+          d = pathlib.Path("public/data")
+          need = ["meta.json", "species_index.json", "ward_summary.json",
+                  "rare_trees.geojson", "giants.geojson", "tiles/index.json"]
+          missing = [n for n in need if not (d / n).exists()]
+          if missing:
+              sys.exit(f"FATAL: missing outputs {missing}")
+          m = json.loads((d / "meta.json").read_text())
+          t = m["totals"]
+          print(json.dumps(t, indent=2))
+          checks = [
+              (t["rows"] > 3_500_000, f"only {t['rows']:,} rows -- expected ~4.09M"),
+              (t["mapped"] > 3_000_000, f"only {t['mapped']:,} mappable points"),
+              (t["species"] > 200, f"only {t['species']} species -- expected ~427"),
+              (t["wards"] >= 10, f"only {t['wards']} wards"),
+              (t["grid_cells"] > 100, f"only {t['grid_cells']} grid cells"),
+              (m["payload_gzip_total"] < 5 * 1024 * 1024,
+               f"payload {m['payload_gzip_total']/1048576:.2f} MiB over budget"),
+          ]
+          bad = [msg for ok, msg in checks if not ok]
+          if bad:
+              sys.exit("FATAL:\n  " + "\n  ".join(bad))
+          print(f"OK: {t['rows']:,} trees, {t['species']} species")
+          PY
+
+      - name: Commit the aggregated JSON
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A public/data
+          if git diff --cached --quiet; then
+            echo "No change in aggregated data."
+          else
+            git commit -m "data: rebuild aggregates from PMC Tree Census 2019"
+            git push
+          fi
