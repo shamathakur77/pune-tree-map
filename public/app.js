@@ -1,8 +1,11 @@
-/* Zaadancha Naksha — झाडांचा नकाशा
+/* ==========================================================================
+   झाडांचा नकाशा · Zaadancha Naksha
    Pune Tree Census 2019, made explorable.
+
    Vanilla JS + Leaflet. No backend, no API keys, no cookies, no storage,
-   no analytics. Every number on screen comes from public/data/*, which is
-   built from the census by scripts/aggregate.py. Nothing is invented in JS. */
+   no analytics. Every number on screen comes from public/data/*, built from
+   the census by scripts/aggregate.py. Nothing is invented here.
+   ========================================================================== */
 
 (function () {
   "use strict";
@@ -10,141 +13,243 @@
   var DATA = "data/";
   var PUNE = [18.5204, 73.8567];
 
-  var MONTHS_MR = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून",
-                   "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
-  var MONTHS_EN = ["January", "February", "March", "April", "May", "June",
-                   "July", "August", "September", "October", "November", "December"];
+  var MR_MONTH = ["जानेवारी","फेब्रुवारी","मार्च","एप्रिल","मे","जून",
+                  "जुलै","ऑगस्ट","सप्टेंबर","ऑक्टोबर","नोव्हेंबर","डिसेंबर"];
+  var EN_MONTH = ["January","February","March","April","May","June",
+                  "July","August","September","October","November","December"];
 
-  var RAMP_LIGHT = ["#dcefd7", "#abd7a2", "#6fb869", "#3a9440", "#216c2e", "#114620"];
-  var RAMP_DARK  = ["#1d4a1e", "#276227", "#33792f", "#46913b", "#6fb869", "#a5d69a"];
+  var RAMP_DARK  = ["#1D4A1E","#276227","#33792F","#46913B","#6FB869","#A5D69A"];
+  var RAMP_LIGHT = ["#DCEFD7","#ABD7A2","#6FB869","#3A9440","#216C2E","#114620"];
 
-  var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  var RAMP = dark ? RAMP_DARK : RAMP_LIGHT;
+  var BASE_DARK  = "https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png";
+  var BASE_LIGHT = "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png";
+  var LABELS     = "https://{s}.basemaps.cartocdn.com/{v}_only_labels/{z}/{x}/{y}{r}.png";
 
-  var S = {                     // everything loaded, nothing synthesised
-    meta: null, species: null, wards: null, names: null, tileIndex: null,
-    rare: null, giants: null,
-    speciesByKey: {},
-    tilesLoaded: {}, cellLayer: null, rareLayer: null, giantLayer: null,
-    map: null, renderer: null,
-    month: new Date().getMonth() + 1,
-    treasureMode: "rare",
-    wardSort: "count"
+  var S = {
+    meta:null, species:null, wards:null, names:null, tileIndex:null,
+    rare:null, giants:null,
+    tilesLoaded:{}, cellLayer:null, rareLayer:null, giantLayer:null,
+    map:null, renderer:null, base:null, labels:null,
+    month:new Date().getMonth() + 1,
+    treasureMode:"rare",
+    wardSort:"count",
+    tab:"map",
+    theme:"dark",
+    snap:"half"
   };
 
-  // ---------------------------------------------------------------- helpers
+  // ------------------------------------------------------------- helpers --
   function $(id) { return document.getElementById(id); }
-
-  function nf(n) {
-    if (n === null || n === undefined) return "—";
-    try { return Number(n).toLocaleString("en-IN"); }
-    catch (e) { return String(n); }
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
   }
-  function pct(n, digits) {
+  function nf(n) {
     if (n === null || n === undefined || isNaN(n)) return "—";
-    return Number(n).toFixed(digits === undefined ? 1 : digits) + "%";
+    try { return Number(n).toLocaleString("en-IN"); } catch (e) { return String(n); }
+  }
+  function pct(n, d) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    return Number(n).toFixed(d === undefined ? 1 : d) + "%";
   }
   function esc(s) {
-    return String(s === null || s === undefined ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+    return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
-  // Marathi name first, then English common name, then botanical. Never blank.
-  function label(key) {
+  /* Marathi/local name first, then English common, then botanical. */
+  function nameOf(key) {
     var n = S.names[key];
     if (!n) return key;
     return n[0] || n[1] || n[2] || key;
   }
-  function labelPair(key) {
+  function sciOf(key) {
     var n = S.names[key];
-    if (!n) return { mr: key, en: "" };
-    return { mr: n[0] || n[1] || n[2] || key, en: n[0] ? (n[1] || n[2] || "") : (n[2] || "") };
+    return n ? (n[2] || "") : "";
   }
-
   function getJSON(path) {
     return fetch(DATA + path, { cache: "no-cache" }).then(function (r) {
       if (!r.ok) throw new Error(path + " → HTTP " + r.status);
       return r.json();
     });
   }
+  function ramp() { return S.theme === "dark" ? RAMP_DARK : RAMP_LIGHT; }
 
-  function fatal(msg) {
-    var b = $("boot");
-    if (b) b.remove();
-    // Hide controls that would do nothing without data, rather than leaving
-    // dead buttons and a legend with no scale on screen.
-    var legend = $("legend");
-    if (legend) legend.hidden = true;
-    var tools = document.querySelector(".maptools");
-    if (tools) tools.hidden = true;
-    var d = document.createElement("div");
-    d.className = "err";
-    d.innerHTML = "<b>डेटा लोड होऊ शकला नाही.</b><br><span class='en'>Could not load the census data. " +
-      "Nothing is shown rather than showing made-up numbers.</span><br><br><code>" + esc(msg) + "</code>";
-    document.querySelector(".panels").prepend(d);
+  // ---------------------------------------------------------------- theme --
+  /* Session-only, deliberately: nothing is written to storage, so the promise
+     in the footer stays literally true. Defaults to the OS setting. */
+  function applyTheme(t) {
+    S.theme = t;
+    document.documentElement.setAttribute("data-theme", t);
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute("content", t === "dark" ? "#0A0D0A" : "#F6F4EC");
+    if (S.base) {
+      S.base.setUrl(t === "dark" ? BASE_DARK : BASE_LIGHT);
+      S.labels.setUrl(LABELS.replace("{v}", t === "dark" ? "dark" : "light"));
+    }
+    if (S.cellLayer) repaintCells();
+    paintRamp();
+  }
+  function paintRamp() {
+    var r = $("ramp");
+    if (r) r.innerHTML = ramp().map(function (c) {
+      return "<i style='background:" + c + "'></i>";
+    }).join("");
   }
 
-  // ----------------------------------------------------------------- colour
-  function cellColor(n, max) {
-    if (!(n > 0)) return RAMP[0];
-    var t = Math.log(n) / Math.log(Math.max(max, 2));
-    var i = Math.floor(t * RAMP.length);
-    return RAMP[Math.max(0, Math.min(RAMP.length - 1, i))];
+  // ---------------------------------------------------------------- sheet --
+  var SNAPS = ["peek", "half", "full"];
+  var TOP_RESERVE = 168;   // must match the sheet height in styles.css
+  function sheetGeom() {
+    var vh = window.innerHeight;
+    var h = vh - TOP_RESERVE;
+    return {
+      vh: vh, h: h,
+      peek: Math.max(0, h - 132),
+      half: Math.max(0, h - 0.52 * vh),
+      full: 0
+    };
+  }
+  function setSnap(name, animate) {
+    if (window.matchMedia("(min-width: 860px)").matches) return;
+    S.snap = name;
+    var g = sheetGeom();
+    var sheet = $("sheet");
+    if (animate === false) sheet.classList.add("dragging");
+    sheet.style.setProperty("--sheet-y", g[name] + "px");
+    document.documentElement.style.setProperty("--peek", "132px");
+    if (animate === false) requestAnimationFrame(function () { sheet.classList.remove("dragging"); });
+    sheet.classList.toggle("at-peek", name === "peek");
+    $("legend").hidden = name !== "peek";
+    $("peekline").style.display = name === "peek" ? "flex" : "none";
+  }
+  function wireSheet() {
+    var sheet = $("sheet"), grab = $("grab");
+    var startY = 0, startTop = 0, dragging = false, moved = 0, t0 = 0;
+
+    function currentTop() {
+      var v = getComputedStyle(sheet).getPropertyValue("--sheet-y").trim();
+      return parseFloat(v) || 0;
+    }
+    function down(e) {
+      if (window.matchMedia("(min-width: 860px)").matches) return;
+      dragging = true; moved = 0; t0 = Date.now();
+      startY = (e.touches ? e.touches[0].clientY : e.clientY);
+      startTop = currentTop();
+      sheet.classList.add("dragging");
+      if (e.pointerId != null && grab.setPointerCapture) {
+        try { grab.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+    }
+    function move(e) {
+      if (!dragging) return;
+      var y = (e.touches ? e.touches[0].clientY : e.clientY);
+      var g = sheetGeom();
+      moved = y - startY;
+      var top = Math.max(g.full, Math.min(g.peek, startTop + moved));
+      sheet.style.setProperty("--sheet-y", top + "px");
+      e.preventDefault();
+    }
+    function up() {
+      if (!dragging) return;
+      dragging = false;
+      sheet.classList.remove("dragging");
+      var g = sheetGeom(), top = currentTop();
+      var fast = Math.abs(moved) > 40 && (Date.now() - t0) < 320;
+      if (fast) {
+        var i = SNAPS.indexOf(S.snap);
+        setSnap(SNAPS[Math.max(0, Math.min(2, i + (moved > 0 ? -1 : 1)))]);
+        return;
+      }
+      var best = "half", bd = Infinity;
+      SNAPS.forEach(function (n) {
+        var d = Math.abs(g[n] - top);
+        if (d < bd) { bd = d; best = n; }
+      });
+      setSnap(best);
+    }
+
+    grab.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    grab.addEventListener("click", function () {
+      if (Math.abs(moved) > 6) return;
+      setSnap(S.snap === "peek" ? "half" : S.snap === "half" ? "full" : "peek");
+    });
+    grab.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); grab.click(); }
+    });
+    window.addEventListener("resize", function () { setSnap(S.snap, false); });
   }
 
-  // -------------------------------------------------------------------- map
+  // ------------------------------------------------------------------ map --
   function initMap() {
     S.map = L.map("map", {
       center: PUNE, zoom: 12, minZoom: 10, maxZoom: 18,
-      preferCanvas: true, zoomControl: true, attributionControl: true
+      preferCanvas: true, zoomControl: false, attributionControl: true
     });
-    S.renderer = L.canvas({ padding: 0.35 });
+    S.renderer = L.canvas({ padding: 0.4 });
 
-    var url = dark
-      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-      : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-    L.tileLayer(url, {
+    S.base = L.tileLayer(S.theme === "dark" ? BASE_DARK : BASE_LIGHT, {
       maxZoom: 19, subdomains: "abcd",
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &middot; &copy; <a href="https://carto.com/attributions">CARTO</a>'
     }).addTo(S.map);
 
     S.cellLayer = L.layerGroup().addTo(S.map);
     S.rareLayer = L.layerGroup();
     S.giantLayer = L.layerGroup();
 
+    // place labels ride above the density grid so streets stay readable
+    S.labels = L.tileLayer(LABELS.replace("{v}", S.theme === "dark" ? "dark" : "light"), {
+      maxZoom: 19, subdomains: "abcd", opacity: .85, pane: "shadowPane"
+    }).addTo(S.map);
+
     S.map.on("moveend zoomend", loadVisibleTiles);
     loadVisibleTiles();
   }
 
+  function cellColor(n, max) {
+    var R = ramp();
+    if (!(n > 0)) return R[0];
+    var t = Math.log(n) / Math.log(Math.max(max, 2));
+    return R[Math.max(0, Math.min(R.length - 1, Math.floor(t * R.length)))];
+  }
+
+  var CELLS = [];   // {rect, n}
+  function repaintCells() {
+    var max = S.tileIndex.max_cell_count;
+    CELLS.forEach(function (c) {
+      c.rect.setStyle({ fillColor: cellColor(c.n, max) });
+    });
+  }
+
   function tileKeySet() {
-    if (S._tkeys) return S._tkeys;
+    if (S._tk) return S._tk;
     var s = {};
     S.tileIndex.tiles.forEach(function (t) { s[t.t[0] + "_" + t.t[1]] = t; });
-    S._tkeys = s;
+    S._tk = s;
     return s;
   }
 
   function loadVisibleTiles() {
     if (!S.tileIndex) return;
     var idx = tileKeySet();
-    var b = S.map.getBounds().pad(0.2);
+    var b = S.map.getBounds().pad(0.25);
     var TD = S.tileIndex.tile_deg;
-    var ti0 = Math.floor(b.getWest() / TD), ti1 = Math.floor(b.getEast() / TD);
-    var tj0 = Math.floor(b.getSouth() / TD), tj1 = Math.floor(b.getNorth() / TD);
-
-    for (var ti = ti0; ti <= ti1; ti++) {
-      for (var tj = tj0; tj <= tj1; tj++) {
-        var k = ti + "_" + tj;
+    var i0 = Math.floor(b.getWest()/TD), i1 = Math.floor(b.getEast()/TD);
+    var j0 = Math.floor(b.getSouth()/TD), j1 = Math.floor(b.getNorth()/TD);
+    for (var i = i0; i <= i1; i++) {
+      for (var j = j0; j <= j1; j++) {
+        var k = i + "_" + j;
         if (!idx[k] || S.tilesLoaded[k]) continue;
         S.tilesLoaded[k] = true;
-        /* eslint-disable no-loop-func */
         (function (key) {
-          getJSON("tiles/" + key + ".json")
-            .then(drawTile)
-            .catch(function (e) {
-              S.tilesLoaded[key] = false;   // allow a retry on the next pan
-              console.warn("tile " + key + " failed:", e.message);
-            });
+          getJSON("tiles/" + key + ".json").then(drawTile).catch(function (e) {
+            S.tilesLoaded[key] = false;      // retry on the next pan
+            console.warn("tile " + key + ":", e.message);
+          });
         })(k);
       }
     }
@@ -154,88 +259,76 @@
     var CD = S.tileIndex.cell_deg, CPT = S.tileIndex.cells_per_tile;
     var max = S.tileIndex.max_cell_count;
     var ti = tile.t[0], tj = tile.t[1];
-
     tile.cells.forEach(function (c) {
-      var ci = ti * CPT + c[0], cj = tj * CPT + c[1];
+      var ci = ti*CPT + c[0], cj = tj*CPT + c[1];
       var n = c[2], top = c[3] || [], healthy = c[4];
-      var w = ci * CD, s = cj * CD;
-      var rect = L.rectangle([[s, w], [s + CD, w + CD]], {
-        renderer: S.renderer,
-        stroke: false,
-        fillColor: cellColor(n, max),
-        fillOpacity: 0.72,
-        interactive: true,
-        bubblingMouseEvents: false
+      var w = ci*CD, s = cj*CD;
+      var rect = L.rectangle([[s, w], [s+CD, w+CD]], {
+        renderer: S.renderer, stroke: false,
+        fillColor: cellColor(n, max), fillOpacity: .62,
+        interactive: true, bubblingMouseEvents: false
       });
-      rect.on("click", function () { showCell(n, top, healthy, [s + CD / 2, w + CD / 2]); });
+      rect.on("click", function () { showCell(n, top, healthy, [s+CD/2, w+CD/2]); });
       S.cellLayer.addLayer(rect);
+      CELLS.push({ rect: rect, n: n });
     });
   }
 
   function showCell(n, top, healthy, center) {
     var rows = top.map(function (t) {
-      var lp = labelPair(t[0]);
-      return "<li><div class='row'><span><span class='name'>" + esc(lp.mr) + "</span> " +
-        "<span class='bot'>" + esc(lp.en) + "</span></span>" +
-        "<span class='num'>" + nf(t[1]) + "</span></div></li>";
+      return "<tr><td>" + esc(nameOf(t[0])) + "</td><td>" + nf(t[1]) + "</td></tr>";
     }).join("");
 
-    var html = "<h2>या भागात <span class='en'>In this ~500 m cell</span></h2>" +
-      "<div class='stats'><div class='stat'><div class='n'>" + nf(n) + "</div>" +
-      "<div class='l'>झाडे · trees</div></div>" +
-      (healthy !== null && healthy !== undefined
-        ? "<div class='stat'><div class='n'>" + healthy + "%</div><div class='l'>निरोगी · healthy</div></div>"
-        : "") +
-      "</div>" +
-      (rows ? "<p class='hint'>मुख्य प्रजाती <span class='en'>Top species here</span></p><ul class='list'>" + rows + "</ul>"
-            : "<p class='hint'>या चौकोनात प्रजातीची नोंद नाही. <span class='en'>No species recorded for this cell.</span></p>");
-
-    $("cellinfo").innerHTML = html;
-    selectTab("map");
-
-    var popTop = top.map(function (t) {
-      return "<tr><td>" + esc(label(t[0])) + "</td><td>" + nf(t[1]) + "</td></tr>";
-    }).join("");
-
-    L.popup({ closeButton: true, autoPan: true, maxWidth: 230, minWidth: 150 })
+    L.popup({ closeButton: true, autoPan: true, maxWidth: 250, minWidth: 180, offset: [0, -4] })
       .setLatLng(center)
-      .setContent("<div class='popup'><h3>" + nf(n) + " झाडे <span class='en'>trees</span></h3>" +
-        (popTop ? "<table>" + popTop + "</table>" : "") +
-        (healthy !== null && healthy !== undefined
-          ? "<div class='en' style='margin-top:5px'>" + healthy + "% निरोगी · healthy</div>" : "") +
+      .setContent(
+        "<div class='pop'><div class='pt'>" + nf(n) + " झाडं</div>" +
+        "<div class='ps'>~500 m &times; 500 m</div>" +
+        (rows ? "<table>" + rows + "</table>" : "<div class='ps'>प्रजातीची नोंद नाही</div>") +
+        (healthy != null ? "<table><tr><td>निरोगी</td><td>" + healthy + "%</td></tr></table>" : "") +
         "</div>")
       .openOn(S.map);
+
+    var host = $("cellinfo");
+    host.innerHTML =
+      "<p class='eyebrow'>Selected cell</p>" +
+      "<div class='card flush'><ul class='rows'>" +
+      "<li><span class='grow'><span class='nm'>या भागात</span>" +
+      "<div class='sci'>~500 m grid cell</div></span>" +
+      "<span class='val'>" + nf(n) + "<small>झाडं</small></span></li>" +
+      top.map(function (t, i) {
+        return "<li><span class='rank'>" + (i+1) + "</span><span class='grow'>" +
+          "<span class='nm'>" + esc(nameOf(t[0])) + "</span>" +
+          "<div class='sci'>" + esc(sciOf(t[0])) + "</div></span>" +
+          "<span class='val'>" + nf(t[1]) + "</span></li>";
+      }).join("") + "</ul></div>";
+    selectTab("map");
+    if (S.snap === "peek") setSnap("half");
   }
 
-  // ------------------------------------------------------------- treasures
-  function markerFor(f, kind) {
+  // ------------------------------------------------------------ treasures --
+  function marker(f, kind) {
     var p = f.properties, c = f.geometry.coordinates;
-    var m = L.circleMarker([c[1], c[0]], {
+    return L.circleMarker([c[1], c[0]], {
       renderer: S.renderer,
-      radius: kind === "giant" ? Math.max(5, Math.min(11, (p.g || 100) / 90)) : 6,
-      fillColor: kind === "rare" ? "#eda100" : (dark ? "#6da7ec" : "#2a78d6"),
-      fillOpacity: 0.95,
-      color: kind === "rare" ? (dark ? "#fff0c8" : "#6b4a00") : (dark ? "#cde2fb" : "#10396b"),
-      weight: 2
-    });
-    m.bindPopup(treasurePopup(p, kind), { maxWidth: 280 });
-    return m;
+      radius: kind === "giant" ? Math.max(5, Math.min(12, (p.g || 100)/95)) : 5.5,
+      fillColor: kind === "rare" ? "#F0B23C" : "#6FA8E8",
+      fillOpacity: .95,
+      color: S.theme === "dark" ? "rgba(10,13,10,.9)" : "rgba(255,255,255,.95)",
+      weight: 1.5
+    }).bindPopup(treasurePopup(p, kind), { maxWidth: 280 });
   }
 
   function treasurePopup(p, kind) {
     function tr(k, v) { return v ? "<tr><td>" + k + "</td><td>" + esc(v) + "</td></tr>" : ""; }
-    return "<div class='popup'>" +
-      "<h3>" + esc(p.l || p.c || p.b) + "</h3>" +
-      "<div class='bot'>" + esc(p.b) + (p.c ? " · " + esc(p.c) : "") + "</div>" +
-      "<table>" +
-      tr("घेर · girth", p.g ? p.g + " cm" : "") +
-      tr("उंची · height", p.h ? p.h + " m" : "") +
-      tr("स्थिती · condition", p.cond) +
-      tr("मालकी · owner", p.own) +
-      tr("प्रभाग · ward", p.w) +
-      "</table>" +
-      "<div class='en' style='margin-top:6px'>" +
-      (kind === "rare" ? "Flagged rare in the 2019 census." : "One of the 500 largest by girth.") +
+    return "<div class='pop'>" +
+      "<div class='pt'>" + esc(p.l || p.c || p.b) + "</div>" +
+      "<div class='ps'>" + esc(p.b) + "</div><table>" +
+      tr("घेर", p.g ? p.g + " cm" : "") +
+      tr("उंची", p.h ? p.h + " m" : "") +
+      tr("स्थिती", p.cond) + tr("मालकी", p.own) + tr("प्रभाग", p.w) +
+      "</table><div class='ps' style='margin:8px 0 0'>" +
+      (kind === "rare" ? "Flagged rare in the 2019 census" : "One of the 500 largest by girth") +
       "</div></div>";
   }
 
@@ -246,10 +339,16 @@
     if (S[store]) return Promise.resolve(layer);
     return getJSON(file).then(function (fc) {
       S[store] = fc;
-      fc.features.forEach(function (f) { layer.addLayer(markerFor(f, kind)); });
-      if (S.treasureMode === kind) renderTreasures();
+      fc.features.forEach(function (f) { layer.addLayer(marker(f, kind)); });
+      if (S.tab === "treasure" && S.treasureMode === kind) renderTreasures();
       return layer;
     });
+  }
+
+  function dayIndex(len) {
+    var d = new Date();
+    var doy = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
+    return len ? (doy * 7919) % len : 0;
   }
 
   function renderTreasures() {
@@ -257,383 +356,434 @@
     var fc = kind === "rare" ? S.rare : S.giants;
     var host = $("treasurelist");
     if (!fc) {
-      host.innerHTML = "<p class='loading'>लोड होत आहे… <span class='en'>Loading…</span></p>";
+      host.innerHTML = "<div class='card'><div class='sub' style='margin:0'>लोड होत आहे…</div></div>";
       ensureLayer(kind).catch(function (e) {
-        host.innerHTML = "<div class='err'>Could not load " + esc(kind) + ": " + esc(e.message) + "</div>";
+        host.innerHTML = "<div class='err'>Could not load " + esc(kind) + ".<code>" + esc(e.message) + "</code></div>";
       });
       return;
     }
 
-    var head = "";
+    var pick = fc.features[dayIndex(fc.features.length)];
+    var pp = pick.properties;
+    var html =
+      "<div class='treasure " + (kind === "giant" ? "giant" : "") + "'>" +
+        "<div class='tk'>आजचा खजिना · today's find</div>" +
+        "<div class='tn'>" + esc(pp.l || pp.c || pp.b) + "</div>" +
+        "<div class='ts'>" + esc(pp.b) + "</div>" +
+        "<div class='tstat'>" +
+          "<div><div class='v'>" + (pp.g ? nf(pp.g) : "—") + "</div><div class='k'>घेर cm</div></div>" +
+          "<div><div class='v'>" + (pp.h ? pp.h : "—") + "</div><div class='k'>उंची m</div></div>" +
+          "<div><div class='v' style='font-size:.95rem;font-weight:600'>" + esc(pp.w || "—") + "</div><div class='k'>प्रभाग</div></div>" +
+        "</div>" +
+        "<div class='acts'><button class='btn primary' id='goto-today'>नकाशावर दाखवा</button></div>" +
+      "</div>";
+
     if (kind === "rare") {
-      head = "<div class='stats'><div class='stat'><div class='n'>" + nf(fc.total_rare_in_census) +
-        "</div><div class='l'>दुर्मिळ नोंदी · flagged rare</div></div>" +
-        "<div class='stat'><div class='n'>" + nf(fc.included) +
-        "</div><div class='l'>नकाशावर · plotted</div></div></div>";
-      if (fc.truncated) {
-        head += "<p class='hint'>⚠ " + esc(fc.note) + "</p>";
-      }
+      html += "<div class='metrics'>" +
+        "<div class='metric'><div class='v'>" + nf(fc.total_rare_in_census) + "</div><div class='k'>दुर्मिळ नोंदी</div></div>" +
+        "<div class='metric'><div class='v'>" + nf(fc.included) + "</div><div class='k'>नकाशावर</div></div>" +
+        "<div class='metric'><div class='v'>" + pct(100*fc.total_rare_in_census/S.meta.totals.rows, 2) + "</div><div class='k'>शहराचा वाटा</div></div>" +
+        "</div>";
+      if (fc.truncated) html += "<div class='card' style='font-size:.8rem;color:var(--txt-2)'>⚠ " + esc(fc.note) + "</div>";
     } else {
-      head = "<div class='stats'><div class='stat'><div class='n'>" + nf(fc.features.length) +
-        "</div><div class='l'>महाकाय झाडे · giants</div></div>" +
-        "<div class='stat'><div class='n'>" + nf(fc.features[0] ? fc.features[0].properties.g : null) +
-        " cm</div><div class='l'>सर्वात मोठा घेर · largest girth</div></div></div>";
+      html += "<div class='metrics'>" +
+        "<div class='metric'><div class='v'>" + nf(fc.features.length) + "</div><div class='k'>महाकाय झाडं</div></div>" +
+        "<div class='metric'><div class='v'>" + nf(fc.features[0] && fc.features[0].properties.g) + "</div><div class='k'>सर्वात मोठा घेर cm</div></div>" +
+        "<div class='metric'><div class='v'>" + nf(fc.features[fc.features.length-1].properties.g) + "</div><div class='k'>५००वा घेर cm</div></div>" +
+        "</div>";
     }
 
-    var items = fc.features.slice(0, 300).map(function (f, i) {
-      var p = f.properties, c = f.geometry.coordinates;
-      return "<li><button class='tr-jump' data-lat='" + c[1] + "' data-lon='" + c[0] + "' data-i='" + i +
-        "' style='all:unset;display:block;width:100%;cursor:pointer'>" +
-        "<div class='row'><span><span class='name'>" + esc(p.l || p.c || p.b) + "</span> " +
-        "<span class='bot'>" + esc(p.b) + "</span></span>" +
-        "<span class='num'>" + (p.g ? p.g + " cm" : "") + "</span></div>" +
-        "<div class='meta'>" + esc(p.w || "") + (p.h ? " · " + p.h + " m" : "") +
-        (p.cond ? " · " + esc(p.cond) : "") + "</div></button></li>";
-    }).join("");
+    html += "<div class='card flush'><ul class='rows'>" +
+      fc.features.slice(0, 200).map(function (f, i) {
+        var p = f.properties, c = f.geometry.coordinates;
+        return "<li><button class='row' data-lat='" + c[1] + "' data-lon='" + c[0] + "'>" +
+          "<span class='rank'>" + (i+1) + "</span>" +
+          "<span class='grow'><span class='nm'>" + esc(p.l || p.c || p.b) + "</span>" +
+          "<div class='sci'>" + esc(p.w || "") + (p.h ? " · " + p.h + " m" : "") + "</div></span>" +
+          "<span class='val'>" + (p.g ? nf(p.g) : "—") + "<small>cm घेर</small></span></button></li>";
+      }).join("") + "</ul></div>" +
+      (fc.features.length > 200
+        ? "<p class='sub' style='margin:12px 0 0'>यादीत पहिली २०० दाखवली आहेत; बाकीची नकाशावर आहेत.</p>" : "");
 
-    host.innerHTML = head + "<ul class='list'>" + items + "</ul>" +
-      (fc.features.length > 300 ? "<p class='hint'>यादीत पहिली ३०० दाखवली आहेत; बाकीची नकाशावर आहेत. " +
-        "<span class='en'>List shows the first 300; the rest are on the map.</span></p>" : "");
+    host.innerHTML = html;
 
-    host.querySelectorAll(".tr-jump").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var lat = parseFloat(btn.dataset.lat), lon = parseFloat(btn.dataset.lon);
-        var layer = kind === "rare" ? S.rareLayer : S.giantLayer;
-        if (!S.map.hasLayer(layer)) {
-          S.map.addLayer(layer);
-          setToggle(kind === "rare" ? "tg-rare" : "tg-giants", true);
-          $(kind === "rare" ? "lg-rare" : "lg-giant").hidden = false;
-        }
-        S.map.setView([lat, lon], 17, { animate: true });
-        selectTab("map");
+    var today = $("goto-today");
+    if (today) today.addEventListener("click", function () {
+      flyTo(pick.geometry.coordinates[1], pick.geometry.coordinates[0], kind);
+    });
+    host.querySelectorAll("button.row").forEach(function (b) {
+      b.addEventListener("click", function () {
+        flyTo(parseFloat(b.dataset.lat), parseFloat(b.dataset.lon), kind);
       });
     });
   }
 
-  // -------------------------------------------------------------- flowering
+  function flyTo(lat, lon, kind) {
+    var layer = kind === "rare" ? S.rareLayer : S.giantLayer;
+    var id = kind === "rare" ? "tg-rare" : "tg-giants";
+    if (!S.map.hasLayer(layer)) {
+      S.map.addLayer(layer);
+      $(id).setAttribute("aria-pressed", "true");
+    }
+    setSnap("peek");
+    S.map.setView([lat, lon], 17, { animate: true });
+  }
+
+  // -------------------------------------------------------------- flowering --
   function renderMonths() {
-    var host = $("months");
-    host.innerHTML = MONTHS_MR.map(function (m, i) {
-      return "<button data-m='" + (i + 1) + "' aria-pressed='" + (S.month === i + 1) + "'>" +
-        esc(m) + "</button>";
+    var now = new Date().getMonth() + 1;
+    $("months").innerHTML = MR_MONTH.map(function (m, i) {
+      return "<button data-m='" + (i+1) + "' data-now='" + (now === i+1 ? 1 : 0) + "' " +
+        "aria-pressed='" + (S.month === i+1) + "'>" + esc(m) +
+        "<span class='n'>" + EN_MONTH[i].slice(0,3) + "</span></button>";
     }).join("");
-    host.querySelectorAll("button").forEach(function (b) {
+    $("months").querySelectorAll("button").forEach(function (b) {
       b.addEventListener("click", function () {
         S.month = parseInt(b.dataset.m, 10);
-        renderMonths();
-        renderFlowering();
+        renderMonths(); renderFlowering();
       });
     });
+    centreMonth();
+  }
+
+  /* Only works once the panel is actually visible, so it is called again
+     when the Flowering tab is opened — not just when the chips are built. */
+  function centreMonth() {
+    var host = $("months");
+    if (!host || host.offsetParent === null) return;
+    var on = host.querySelector('[aria-pressed="true"]');
+    if (!on) return;
+    host.scrollLeft = on.offsetLeft - (host.clientWidth - on.offsetWidth) / 2;
+  }
+
+  function natTag(n) {
+    return "<span class='tag " + esc(n) + "'>" +
+      (n === "native" ? "देशी" : n === "non_native" ? "परदेशी" : "माहीत नाही") + "</span>";
   }
 
   function renderFlowering() {
     var m = S.month;
     var hits = S.species.species.filter(function (s) { return s.fm && s.fm.indexOf(m) !== -1; });
     hits.sort(function (a, b) { return b.n - a.n; });
-
-    var totalTrees = hits.reduce(function (a, s) { return a + s.n; }, 0);
-    var head = "<div class='stats'>" +
-      "<div class='stat'><div class='n'>" + nf(hits.length) + "</div><div class='l'>प्रजाती फुलतात · species in bloom</div></div>" +
-      "<div class='stat'><div class='n'>" + nf(totalTrees) + "</div><div class='l'>झाडे · trees</div></div></div>" +
-      "<p class='hint'>" + esc(MONTHS_MR[m - 1]) + " मध्ये फुलणाऱ्या प्रजाती. " +
-      "<span class='en'>Species recorded as flowering in " + MONTHS_EN[m - 1] + ".</span></p>";
+    var trees = hits.reduce(function (a, s) { return a + s.n; }, 0);
+    var share = S.meta.totals.rows ? 100*trees/S.meta.totals.rows : 0;
 
     if (!hits.length) {
-      $("flowerlist").innerHTML = head +
-        "<p class='hint'>या महिन्यासाठी नोंद नाही. <span class='en'>The census records no species flowering this month. " +
-        "That is what the data says — it has not been filled in.</span></p>";
+      $("flowerlist").innerHTML =
+        "<div class='card'><div class='nm'>" + esc(MR_MONTH[m-1]) + " मध्ये नोंद नाही</div>" +
+        "<p class='sub' style='margin:6px 0 0'>The census records no species flowering this month. " +
+        "That is what the data says — it has not been filled in.</p></div>";
       return;
     }
 
-    var items = hits.slice(0, 80).map(function (s) {
-      return "<li><div class='row'><span>" +
-        "<span class='name'>" + esc(s.l || s.c || s.b) + "</span> " +
-        "<span class='tag " + esc(s.nat) + "'>" + natLabel(s.nat) + "</span>" +
-        "<div class='bot'>" + esc(s.b) + (s.c ? " · " + esc(s.c) : "") + "</div>" +
-        "</span><span class='num'>" + nf(s.n) + "</span></div>" +
-        "<div class='meta'>" +
-        (s.fm.length === 12 ? "वर्षभर · all year" : s.fm.map(function (x) { return MONTHS_MR[x - 1]; }).join(", ")) +
-        (s.e ? " · " + esc(s.e) : "") + "</div></li>";
-    }).join("");
-
-    $("flowerlist").innerHTML = head + "<ul class='list'>" + items + "</ul>" +
-      (hits.length > 80 ? "<p class='hint'>वरच्या ८० प्रजाती दाखवल्या. <span class='en'>Showing the 80 most common.</span></p>" : "");
+    $("flowerlist").innerHTML =
+      "<div class='hero' style='padding-top:0'>" +
+        "<div class='big num'>" + nf(hits.length) + "</div>" +
+        "<div class='cap'>प्रजाती " + esc(MR_MONTH[m-1]) + "मध्ये फुलतात</div>" +
+      "</div>" +
+      "<div class='metrics'>" +
+        "<div class='metric'><div class='v'>" + nf(trees) + "</div><div class='k'>झाडं</div></div>" +
+        "<div class='metric'><div class='v'>" + pct(share, 0) + "</div><div class='k'>शहराचा वाटा</div></div>" +
+        "<div class='metric'><div class='v'>" + nf(S.species.count) + "</div><div class='k'>एकूण प्रजाती</div></div>" +
+      "</div>" +
+      "<div class='card flush'><ul class='rows'>" +
+      hits.slice(0, 60).map(function (s, i) {
+        return "<li><span class='rank'>" + (i+1) + "</span><span class='grow'>" +
+          "<span class='nm'>" + esc(s.l || s.c || s.b) + "</span> " + natTag(s.nat) +
+          "<div class='sci'>" + esc(s.b) + "</div></span>" +
+          "<span class='val'>" + nf(s.n) + "<small>" + esc(s.e || "") + "</small></span></li>";
+      }).join("") + "</ul></div>" +
+      (hits.length > 60 ? "<p class='sub' style='margin:12px 0 0'>सर्वाधिक आढळणाऱ्या ६० प्रजाती दाखवल्या आहेत.</p>" : "");
   }
 
-  function natLabel(n) {
-    return n === "native" ? "देशी" : n === "non_native" ? "परदेशी" : "माहिती नाही";
-  }
-
-  // ------------------------------------------------------------------ wards
+  // ------------------------------------------------------------------ wards --
   function renderWards() {
     var ws = S.wards.wards.slice();
     if (S.wardSort === "native") {
       ws = ws.filter(function (w) { return w.native_pct !== null; });
       ws.sort(function (a, b) { return b.native_pct - a.native_pct; });
+      $("wardnote").textContent = "देशी % = ओळखता आलेल्या प्रजातींपैकी देशी झाडांचं प्रमाण.";
     } else {
       ws.sort(function (a, b) { return b.n - a.n; });
+      $("wardnote").textContent = "प्रभागानुसार नोंदवलेली एकूण झाडं.";
     }
-    var maxN = ws.length ? Math.max.apply(null, ws.map(function (w) { return S.wardSort === "native" ? w.native_pct : w.n; })) : 1;
+    var maxV = ws.length ? (S.wardSort === "native" ? ws[0].native_pct : ws[0].n) : 1;
 
-    $("wardnote").innerHTML = S.wardSort === "native"
-      ? "देशी % = ओळखता आलेल्या प्रजातींपैकी देशी. <span class='en'>Native % is of the trees whose species we could classify — see the footer on how that list is made.</span>"
-      : "प्रभागानुसार एकूण झाडे. <span class='en'>Total recorded trees per ward.</span>";
-
-    $("wardlist").innerHTML = "<ul class='list'>" + ws.map(function (w, i) {
-      var val = S.wardSort === "native" ? w.native_pct : w.n;
-      var top = (w.top || []).slice(0, 5).map(function (t) { return esc(label(t.k)); }).join(" · ");
-      return "<li><div class='row'><span><span class='name'>" + (i + 1) + ". " + esc(w.name) + "</span>" +
-        "<div class='bot'>" + nf(w.n) + " झाडे" +
-        (w.healthy_pct !== null ? " · " + pct(w.healthy_pct, 0) + " निरोगी" : "") + "</div></span>" +
-        "<span class='num'>" + (S.wardSort === "native" ? pct(w.native_pct, 0) : nf(w.n)) + "</span></div>" +
-        "<div class='bar'><i style='width:" + Math.max(2, (val / maxN) * 100).toFixed(1) + "%'></i></div>" +
-        (top ? "<div class='meta'>" + top + "</div>" : "") + "</li>";
-    }).join("") + "</ul>";
+    $("wardlist").innerHTML = "<div class='card flush'><ul class='rows'>" +
+      ws.map(function (w, i) {
+        var v = S.wardSort === "native" ? w.native_pct : w.n;
+        var top = (w.top || []).slice(0, 3).map(function (t) { return esc(nameOf(t.k)); }).join(" · ");
+        return "<li><span class='rank'>" + (i+1) + "</span><span class='grow'>" +
+          "<span class='nm'>" + esc(w.name) + "</span>" +
+          "<div class='sci' style='font-style:normal'>" + top + "</div>" +
+          "<div class='meter'><i style='width:" + Math.max(2, (v/maxV)*100).toFixed(1) + "%'></i></div>" +
+          "</span><span class='val'>" +
+          (S.wardSort === "native" ? pct(w.native_pct, 0) : nf(w.n)) +
+          "<small>" + (S.wardSort === "native" ? nf(w.n) + " झाडं" : pct(w.healthy_pct, 0) + " निरोगी") +
+          "</small></span></li>";
+      }).join("") + "</ul></div>";
   }
 
-  // ------------------------------------------------------------------ facts
+  // ------------------------------------------------------------------ facts --
   function buildFacts() {
-    var m = S.meta, sp = S.species.species, total = m.totals.rows;
-    var nat = m.nativity;
-    var natKnown = nat.native + nat.non_native;
-    var top3 = sp.slice(0, 3);
-    var top3n = top3.reduce(function (a, s) { return a + s.n; }, 0);
-    var top3NonNative = top3.filter(function (s) { return s.nat === "non_native"; });
-    var wardsByCount = S.wards.wards.slice().sort(function (a, b) { return b.n - a.n; });
-    var wardsByNative = S.wards.wards.filter(function (w) { return w.native_pct !== null; })
-      .sort(function (a, b) { return b.native_pct - a.native_pct; });
-    var url = location.origin + location.pathname;
-
-    var facts = [];
-
-    facts.push({
-      big: pct(100 * top3n / total, 0),
-      // The Marathi line is generated from the number too, so it can never
-      // contradict the figure beside it when the data changes.
-      mr: "पुण्यातील " + pct(100 * top3n / total, 0) + " झाडे फक्त ३ प्रजातींची आहेत — " +
-          top3.map(function (s) { return (s.l || s.c || s.b); }).join(", ") + ".",
-      en: "Just 3 species — " + top3.map(function (s) { return (s.l || s.c || s.b); }).join(", ") +
-          " — account for " + pct(100 * top3n / total, 0) + " of all " + nf(total) + " trees counted." +
-          (top3NonNative.length ? " " + top3NonNative.length + " of those 3 (" +
-            top3NonNative.map(function (s) { return s.b; }).join(", ") + ") are not native to India." : ""),
-      share: "Pune's 2019 tree census counted " + nf(total) + " trees — and " +
-        pct(100 * top3n / total, 0) + " of them are just 3 species (" +
-        top3.map(function (s) { return s.b; }).join(", ") + ")." +
-        (top3NonNative.length ? " " + top3NonNative.length + " of those 3 aren't native to India." : "")
-    });
-
+    var m = S.meta, sp = S.species.species, total = m.totals.rows, nat = m.nativity;
+    var known = nat.native + nat.non_native;
+    var t3 = sp.slice(0, 3), t3n = t3.reduce(function (a, s) { return a + s.n; }, 0);
+    var t3names = t3.map(function (s) { return s.l || s.c || s.b; }).join(", ");
+    var t3intro = t3.filter(function (s) { return s.nat === "non_native"; }).length;
+    var t3unk = t3.filter(function (s) { return s.nat === "unknown"; }).length;
     var s1 = sp[0];
-    facts.push({
-      big: nf(s1.n),
-      mr: (s1.l || s1.c || s1.b) + " — पुण्यातील सर्वात सामान्य झाड (" +
-          pct(100 * s1.n / total, 1) + ").",
-      en: s1.b + " (" + (s1.c || "—") + ") is Pune's most common tree: " + nf(s1.n) +
-          " of them, " + pct(100 * s1.n / total, 1) + " of every tree in the city.",
+    var byCount = S.wards.wards.slice().sort(function (a,b) { return b.n - a.n; });
+    var byNative = S.wards.wards.filter(function (w) { return w.native_pct !== null; })
+                     .sort(function (a,b) { return b.native_pct - a.native_pct; });
+    var url = location.origin + location.pathname;
+    var F = [];
+
+    // 1 — concentration
+    var originLine = t3intro + " of those three are introduced";
+    if (t3unk) originLine += ", and " + t3unk + " could not be classified from our origin list";
+    F.push({
+      n: pct(100*t3n/total, 0),
+      mr: "तीन प्रजाती. जवळपास निम्मं पुणं.",
+      en: t3names + " together are " + pct(100*t3n/total, 0) + " of all " +
+          nf(total) + " trees PMC counted. " + originLine + ".",
+      share: "Three species are " + pct(100*t3n/total, 0) + " of every tree in Pune (" +
+             t3.map(function (s) { return s.b; }).join(", ") + ")."
+    });
+
+    // 2 — the commonest tree
+    F.push({
+      n: nf(s1.n),
+      mr: (s1.l || s1.c || s1.b) + " — पुण्यात सर्वात जास्त आढळणारं झाड.",
+      en: s1.b + " accounts for " + pct(100*s1.n/total, 1) +
+          " of the city on its own — roughly one in every " +
+          Math.round(total/s1.n) + " trees.",
       share: "Pune's most common tree is " + (s1.l ? s1.l + " / " : "") + s1.b +
-        " — " + nf(s1.n) + " of them, " + pct(100 * s1.n / total, 1) + " of the whole city."
+             " — " + nf(s1.n) + " of them, " + pct(100*s1.n/total, 1) + " of the city."
     });
 
-    facts.push({
-      big: natKnown ? pct(100 * nat.native / natKnown, 0) : "—",
-      mr: natKnown
-        ? "ओळखता आलेल्या झाडांपैकी " + pct(100 * nat.native / natKnown, 0) + " देशी आहेत."
-        : "देशी प्रमाण सांगण्याइतकी माहिती नाही.",
-      en: natKnown
-        ? pct(100 * nat.native / natKnown, 0) + " of the trees we could classify are native to the Indian subcontinent; " +
-          pct(100 * nat.non_native / natKnown, 0) + " are introduced. " + nf(nat.unknown) +
-          " trees (" + pct(100 * nat.unknown / total, 0) + ") could not be classified and are counted separately, never guessed."
-        : "Not enough species could be classified to state this honestly.",
-      share: natKnown ? "Of Pune's classifiable trees, " + pct(100 * nat.native / natKnown, 0) +
-        " are native to the subcontinent and " + pct(100 * nat.non_native / natKnown, 0) + " were introduced." : ""
+    // 3 — nativity
+    if (known) {
+      var np = 100*nat.native/known;
+      F.push({
+        n: pct(np, 0),
+        mr: "ओळखता आलेल्या झाडांपैकी एवढीच देशी.",
+        en: pct(np, 0) + " of classifiable trees are native to the subcontinent; " +
+            pct(100 - np, 0) + " were introduced. A further " + nf(nat.unknown) +
+            " trees (" + pct(100*nat.unknown/total, 0) +
+            ") could not be classified and are never guessed at.",
+        share: "Only " + pct(np, 0) + " of Pune's classifiable trees are native to the subcontinent."
+      });
+    }
+
+    // 4 — wards
+    var gw = byCount[0], nw = byNative[0];
+    F.push({
+      n: nf(gw.n),
+      mr: gw.name + " — सर्वाधिक झाडं असलेला प्रभाग.",
+      en: gw.name + " has more recorded trees than any other ward." +
+          (nw ? " The most native ward is " + nw.name + ", at " + pct(nw.native_pct, 0) + "." : ""),
+      share: "Pune's greenest ward by count is " + gw.name + " — " + nf(gw.n) + " trees." +
+             (nw ? " Most native: " + nw.name + " (" + pct(nw.native_pct, 0) + ")." : "")
     });
 
-    var gw = wardsByCount[0];
-    var nw = wardsByNative[0];
-    facts.push({
-      big: nf(gw.n),
-      mr: gw.name + " — सर्वाधिक झाडे असलेला प्रभाग (" + nf(gw.n) + " झाडे).",
-      en: gw.name + " has more recorded trees than any other ward: " + nf(gw.n) + "." +
-          (nw ? " The most native ward is " + nw.name + " at " + pct(nw.native_pct, 0) + " native." : ""),
-      share: "Pune's greenest ward by count is " + gw.name + " with " + nf(gw.n) + " trees." +
-        (nw ? " Most-native ward: " + nw.name + " (" + pct(nw.native_pct, 0) + ")." : "")
+    // 5 — the average tree
+    F.push({
+      n: (m.totals.avg_girth_cm != null ? m.totals.avg_girth_cm + " cm" : "—"),
+      mr: "पुण्यातलं सरासरी झाड — बारीक आणि तरुण.",
+      en: "The average censused tree is " + m.totals.avg_girth_cm + " cm around and " +
+          m.totals.avg_height_m + " m tall. Meanwhile " + nf(m.totals.rare_flagged) +
+          " trees are flagged rare — " + pct(100*m.totals.rare_flagged/total, 2) + " of the city.",
+      share: "Pune's average tree is just " + m.totals.avg_girth_cm + " cm in girth and " +
+             m.totals.avg_height_m + " m tall. The canopy is young and thin."
     });
 
-    facts.push({
-      big: nf(m.totals.rare_flagged),
-      mr: nf(m.totals.rare_flagged) + " झाडे दुर्मिळ म्हणून नोंदवली आहेत — म्हणजे शहरातील फक्त " +
-          pct(100 * m.totals.rare_flagged / total, 3) + ". शोधायला जा!",
-      en: nf(m.totals.rare_flagged) + " trees are flagged rare in the census — " +
-          pct(100 * m.totals.rare_flagged / total, 3) + " of the city. " +
-          "The 500 largest trees have girths up to " +
-          (S.giants && S.giants.features[0] ? nf(S.giants.features[0].properties.g) + " cm" : "hundreds of cm") + ".",
-      share: "Only " + nf(m.totals.rare_flagged) + " of Pune's " + nf(total) +
-        " censused trees are flagged rare — that's " + pct(100 * m.totals.rare_flagged / total, 3) + ". Go find one."
-    });
-
-    var host = $("facts");
-    host.innerHTML = facts.map(function (f, i) {
-      return "<div class='fact'><div class='big'>" + esc(f.big) + "</div>" +
-        "<p class='mr'>" + esc(f.mr) + "</p>" +
-        "<p class='en'>" + esc(f.en) + "</p>" +
-        "<div class='acts'><button class='primary' data-i='" + i + "' data-act='share'>शेअर करा · Share</button>" +
-        "<button data-i='" + i + "' data-act='copy'>कॉपी करा · Copy</button></div></div>";
+    $("facts").innerHTML = F.map(function (f, i) {
+      return "<article class='fact'>" +
+        "<div class='fnum'>" + esc(f.n) + "</div>" +
+        "<p class='fmr'>" + esc(f.mr) + "</p>" +
+        "<p class='fen'>" + esc(f.en) + "</p>" +
+        "<div class='acts'>" +
+          "<button class='btn primary' data-i='" + i + "' data-a='share'>शेअर करा</button>" +
+          "<button class='btn' data-i='" + i + "' data-a='copy'>कॉपी</button>" +
+        "</div></article>";
     }).join("");
 
-    host.querySelectorAll("button").forEach(function (b) {
+    $("facts").querySelectorAll("button").forEach(function (b) {
       b.addEventListener("click", function () {
-        var f = facts[parseInt(b.dataset.i, 10)];
-        var text = f.share + "\n\nSource: PMC Tree Census 2019 via OpenCity. " +
-          "Explore: " + url;
-        if (b.dataset.act === "share" && navigator.share) {
-          navigator.share({ title: "Zaadancha Naksha", text: text }).catch(function () {});
+        var f = F[+b.dataset.i];
+        var text = f.share + "\n\nSource: PMC Tree Census 2019 via OpenCity.\n" + url;
+        if (b.dataset.a === "share" && navigator.share) {
+          navigator.share({ title: "झाडांचा नकाशा", text: text }).catch(function () {});
         } else if (navigator.clipboard) {
           navigator.clipboard.writeText(text).then(function () {
-            var old = b.textContent;
-            b.textContent = "✓ कॉपी झाले";
-            setTimeout(function () { b.textContent = old; }, 1600);
+            var o = b.textContent; b.textContent = "✓ कॉपी झालं";
+            setTimeout(function () { b.textContent = o; }, 1600);
           });
         }
       });
     });
   }
 
-  // ------------------------------------------------------------- map panel
+  // -------------------------------------------------------------- map panel --
   function renderMapPanel() {
     var t = S.meta.totals, nat = S.meta.nativity;
-    var natKnown = nat.native + nat.non_native;
+    var known = nat.native + nat.non_native;
 
-    $("stats").innerHTML =
-      "<div class='stat'><div class='n'>" + nf(t.rows) + "</div><div class='l'>एकूण झाडे · trees counted</div></div>" +
-      "<div class='stat'><div class='n'>" + nf(t.species) + "</div><div class='l'>प्रजाती · species</div></div>" +
-      "<div class='stat'><div class='n'>" + nf(t.wards) + "</div><div class='l'>प्रभाग · wards</div></div>" +
-      "<div class='stat'><div class='n'>" + nf(t.rare_flagged) + "</div><div class='l'>दुर्मिळ · rare</div></div>";
+    $("peekline").innerHTML = "<b class='num'>" + nf(t.rows) + "</b> झाडं · वर ओढा";
 
-    // Shares of the WHOLE census, so the three segments always sum to 100%.
-    var pNative = 100 * nat.native / t.rows;
-    var pIntro = 100 * nat.non_native / t.rows;
-    var pUnk = 100 * nat.unknown / t.rows;
-    var npOfKnown = natKnown ? 100 * nat.native / natKnown : null;
-    var unkEdge = ";box-shadow:inset 0 0 0 1px var(--nat-unknown-edge)";
+    $("hero").innerHTML =
+      "<p class='eyebrow'>PMC Tree Census 2019</p>" +
+      "<div class='big num'>" + nf(t.rows) + "</div>" +
+      "<div class='cap'>पुण्यात मोजलेली झाडं</div>" +
+      "<div class='metrics' style='margin-top:18px;margin-bottom:0'>" +
+        "<div class='metric'><div class='v num'>" + nf(t.species) + "</div><div class='k'>प्रजाती</div></div>" +
+        "<div class='metric'><div class='v num'>" + nf(t.wards) + "</div><div class='k'>प्रभाग</div></div>" +
+        "<div class='metric'><div class='v num'>" + nf(t.rare_flagged) + "</div><div class='k'>दुर्मिळ</div></div>" +
+      "</div>";
 
+    var pN = 100*nat.native/t.rows, pI = 100*nat.non_native/t.rows, pU = 100*nat.unknown/t.rows;
     $("natsplit").innerHTML =
-      "<h2 style='margin-top:14px'>देशी की परदेशी? <span class='en'>Native or introduced?</span></h2>" +
-      "<div class='segbar'>" +
-        "<i style='width:" + pNative.toFixed(1) + "%;background:var(--nat-native)'></i>" +
-        "<i style='width:" + pIntro.toFixed(1) + "%;background:var(--nat-intro)'></i>" +
-        "<i style='width:" + pUnk.toFixed(1) + "%;background:var(--nat-unknown)" + unkEdge + "'></i>" +
+      "<p class='eyebrow' style='margin-top:24px'>Origin</p>" +
+      "<h3 class='h' style='font-size:1.1rem'>देशी की परदेशी?</h3>" +
+      "<div class='seg'>" +
+        "<i style='width:" + pN.toFixed(1) + "%;background:var(--nat)'></i>" +
+        "<i style='width:" + pI.toFixed(1) + "%;background:var(--intro)'></i>" +
+        "<i style='width:" + pU.toFixed(1) + "%;background:var(--unk);box-shadow:inset 0 0 0 1px var(--unk-e)'></i>" +
       "</div>" +
-      "<div class='seglegend'>" +
-      "<span><i class='sw' style='background:var(--nat-native)'></i>देशी native " + pct(pNative, 0) + "</span>" +
-      "<span><i class='sw' style='background:var(--nat-intro)'></i>परदेशी introduced " + pct(pIntro, 0) + "</span>" +
-      "<span><i class='sw' style='background:var(--nat-unknown)" + unkEdge + "'></i>माहिती नाही unknown " + pct(pUnk, 0) + "</span>" +
+      "<div class='segkey'>" +
+        "<span><i class='sw' style='background:var(--nat)'></i>देशी <b>" + pct(pN,0) + "</b></span>" +
+        "<span><i class='sw' style='background:var(--intro)'></i>परदेशी <b>" + pct(pI,0) + "</b></span>" +
+        "<span><i class='sw' style='background:var(--unk);box-shadow:inset 0 0 0 1px var(--unk-e)'></i>माहीत नाही <b>" + pct(pU,0) + "</b></span>" +
       "</div>" +
-      (npOfKnown !== null
-        ? "<p class='hint' style='margin-top:6px'>ओळखता आलेल्या झाडांपैकी <b>" + pct(npOfKnown, 0) +
-          "</b> देशी. <span class='en'>Of the trees that could be classified at all, " +
-          pct(npOfKnown, 0) + " are native.</span></p>"
-        : "") +
-      "<p class='hint' style='margin-top:6px'>⚠ " + esc(S.meta.nativity.warning) + "</p>";
+      (known ? "<p class='sub' style='margin:14px 0 0'>ओळखता आलेल्या झाडांपैकी <b style='color:var(--txt)'>" +
+        pct(100*nat.native/known, 0) + "</b> देशी आहेत.</p>" : "") +
+      "<div class='card' style='margin-top:12px;font-size:.78rem;color:var(--txt-2)'>⚠ " +
+        esc(nat.warning) + "</div>";
 
-    $("footer").innerHTML =
-      "<p><b>स्रोत · Source:</b> <a href='https://data.opencity.in/dataset/pune-tree-census-2019' " +
-        "target='_blank' rel='noopener'>Pune Tree Census 2019 — Pune Municipal Corporation, via OpenCity</a>. " +
-        "Census fieldwork August 2019. Aggregated " + esc(S.meta.built_utc) + " UTC from " +
-        esc(S.meta.source.parts) + " CSV parts.</p>" +
-      "<p>ही महापालिकेची अधिकृत सेवा नाही. <span class='en'>Not an official PMC service. " +
-        "Trees planted or cut since 2019 are not reflected.</span></p>" +
-      "<p>Sovereign by Source. No cookies, no analytics, no accounts, no data leaves your device.</p>" +
-      "<p><a href='data/meta.json'>meta.json</a> — every caveat, every count, and the raw schema report.</p>";
+    $("foot").innerHTML =
+      "<p><b style='color:var(--txt-2)'>स्रोत</b> · <a href='https://data.opencity.in/dataset/pune-tree-census-2019' target='_blank' rel='noopener'>" +
+        "Pune Tree Census 2019 — Pune Municipal Corporation, via OpenCity</a>. " +
+        "Fieldwork August 2019. Aggregated " + esc((S.meta.built_utc||"").slice(0,10)) +
+        " from " + esc(S.meta.source.parts) + " CSV parts.</p>" +
+      "<p>ही महापालिकेची अधिकृत सेवा नाही. Trees planted or cut since 2019 are not reflected.</p>" +
+      "<p>No cookies. No storage. No analytics. No accounts. Nothing about you leaves your device.</p>" +
+      "<p class='sig'>Sovereign by Source · <a href='data/meta.json'>meta.json</a> — every caveat and count.</p>";
 
-    // Paint the legend ramp from the ramp actually in use, so the key can never
-    // disagree with the map in dark mode.
-    var ramp = document.querySelector(".legend .ramp");
-    if (ramp) {
-      ramp.innerHTML = RAMP.map(function (c) {
-        return "<i style='background:" + c + "'></i>";
-      }).join("");
-    }
-    $("lg-hi").textContent = nf(S.tileIndex.max_cell_count) + "+";
+    $("lg-hi").textContent = nf(S.tileIndex.max_cell_count);
   }
 
-  // ------------------------------------------------------------------- tabs
+  // ------------------------------------------------------------------ tabs --
+  var TABS = ["map","flower","treasure","ward","facts"];
   function selectTab(name) {
-    ["map", "flower", "treasure", "ward", "facts"].forEach(function (n) {
-      var t = $("tab-" + n), p = $("p-" + n);
-      var on = n === name;
-      t.setAttribute("aria-selected", String(on));
-      p.hidden = !on;
+    S.tab = name;
+    TABS.forEach(function (n) {
+      $("tab-" + n).setAttribute("aria-selected", String(n === name));
+      $("p-" + n).hidden = n !== name;
     });
-    var panels = document.querySelector(".panels");
-    if (panels) panels.scrollTop = 0;
+    $("panels").scrollTop = 0;
   }
-
-  function setToggle(id, on) { $(id).setAttribute("aria-pressed", String(on)); }
 
   function wireUI() {
-    ["map", "flower", "treasure", "ward", "facts"].forEach(function (n) {
+    TABS.forEach(function (n) {
       $("tab-" + n).addEventListener("click", function () {
         selectTab(n);
+        if (S.snap === "peek") setSnap("half");
         if (n === "treasure") renderTreasures();
+        if (n === "flower") centreMonth();
       });
+    });
+
+    $("honest").addEventListener("click", function () {
+      var b = $("honest");
+      b.setAttribute("aria-expanded", b.getAttribute("aria-expanded") === "true" ? "false" : "true");
+    });
+
+    $("theme").addEventListener("click", function () {
+      applyTheme(S.theme === "dark" ? "light" : "dark");
     });
 
     $("tg-grid").addEventListener("click", function () {
       var on = $("tg-grid").getAttribute("aria-pressed") !== "true";
-      setToggle("tg-grid", on);
+      $("tg-grid").setAttribute("aria-pressed", String(on));
       if (on) S.map.addLayer(S.cellLayer); else S.map.removeLayer(S.cellLayer);
     });
 
-    [["tg-rare", "rare", S.rareLayer, "lg-rare"],
-     ["tg-giants", "giant", S.giantLayer, "lg-giant"]].forEach(function (cfg) {
-      $(cfg[0]).addEventListener("click", function () {
-        var on = $(cfg[0]).getAttribute("aria-pressed") !== "true";
-        setToggle(cfg[0], on);
-        $(cfg[3]).hidden = !on;
-        if (!on) { S.map.removeLayer(cfg[2]); return; }
-        ensureLayer(cfg[1]).then(function (layer) { S.map.addLayer(layer); })
-          .catch(function (e) { console.error(e); setToggle(cfg[0], false); $(cfg[3]).hidden = true; });
+    [["tg-rare","rare",function(){return S.rareLayer;}],
+     ["tg-giants","giant",function(){return S.giantLayer;}]].forEach(function (c) {
+      $(c[0]).addEventListener("click", function () {
+        var on = $(c[0]).getAttribute("aria-pressed") !== "true";
+        $(c[0]).setAttribute("aria-pressed", String(on));
+        if (!on) { S.map.removeLayer(c[2]()); return; }
+        ensureLayer(c[1]).then(function (l) { S.map.addLayer(l); })
+          .catch(function (e) { console.error(e); $(c[0]).setAttribute("aria-pressed","false"); });
       });
     });
 
     $("tr-rare").addEventListener("click", function () {
-      S.treasureMode = "rare"; setToggle("tr-rare", true); setToggle("tr-giant", false); renderTreasures();
+      S.treasureMode = "rare";
+      $("tr-rare").setAttribute("aria-pressed","true");
+      $("tr-giant").setAttribute("aria-pressed","false");
+      renderTreasures();
     });
     $("tr-giant").addEventListener("click", function () {
-      S.treasureMode = "giant"; setToggle("tr-rare", false); setToggle("tr-giant", true); renderTreasures();
+      S.treasureMode = "giant";
+      $("tr-rare").setAttribute("aria-pressed","false");
+      $("tr-giant").setAttribute("aria-pressed","true");
+      renderTreasures();
     });
     $("w-count").addEventListener("click", function () {
-      S.wardSort = "count"; setToggle("w-count", true); setToggle("w-native", false); renderWards();
+      S.wardSort = "count";
+      $("w-count").setAttribute("aria-pressed","true");
+      $("w-native").setAttribute("aria-pressed","false");
+      renderWards();
     });
     $("w-native").addEventListener("click", function () {
-      S.wardSort = "native"; setToggle("w-count", false); setToggle("w-native", true); renderWards();
+      S.wardSort = "native";
+      $("w-count").setAttribute("aria-pressed","false");
+      $("w-native").setAttribute("aria-pressed","true");
+      renderWards();
     });
   }
 
-  // ------------------------------------------------------------------- boot
+  function fatal(msg) {
+    $("boot").classList.add("gone");
+    document.querySelector(".legend").hidden = true;
+    document.querySelector(".toolstack").style.display = "none";
+    selectTab("map");
+    setSnap("full");
+    $("hero").innerHTML = "";
+    $("cellinfo").innerHTML =
+      "<div class='err'><b>माहिती लोड होऊ शकली नाही.</b><br>" +
+      "Could not load the census data. Nothing is shown rather than showing " +
+      "made-up numbers.<code>" + esc(msg) + "</code></div>";
+  }
+
+  // ------------------------------------------------------------------ boot --
+  applyTheme(window.matchMedia &&
+             window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+
   Promise.all([
-    getJSON("meta.json"),
-    getJSON("species_index.json"),
-    getJSON("ward_summary.json"),
-    getJSON("species_names.json"),
-    getJSON("tiles/index.json")
+    getJSON("meta.json"), getJSON("species_index.json"), getJSON("ward_summary.json"),
+    getJSON("species_names.json"), getJSON("tiles/index.json")
   ]).then(function (r) {
     S.meta = r[0]; S.species = r[1]; S.wards = r[2]; S.names = r[3]; S.tileIndex = r[4];
-    S.species.species.forEach(function (s) { S.speciesByKey[s.k] = s; });
-
-    var b = $("boot"); if (b) b.remove();
 
     initMap();
+    wireSheet();
     wireUI();
+    setSnap("half", false);
     renderMapPanel();
     renderMonths();
     renderFlowering();
     renderWards();
     buildFacts();
+    paintRamp();
 
-    // warm the treasure layers in the background so the hunt feels instant
-    ensureLayer("giant").then(buildFacts).catch(function () {});
+    $("boot").classList.add("gone");
+    setTimeout(function () { var b = $("boot"); if (b) b.remove(); }, 500);
+
+    ensureLayer("giant").catch(function () {});
     ensureLayer("rare").catch(function () {});
-  }).catch(function (e) {
-    fatal(e.message);
-  });
+  }).catch(function (e) { fatal(e.message); });
 })();

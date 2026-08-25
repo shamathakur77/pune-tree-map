@@ -1,122 +1,136 @@
 <!doctype html>
-<html lang="mr">
+<html lang="mr" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>झाडांचा नकाशा · Zaadancha Naksha — Pune Tree Map</title>
-<meta name="description" content="Pune's 2019 tree census of 4.09 million trees, made explorable. Grid map, flowering calendar, rare and giant trees, ward leaderboard. Marathi first.">
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#216c2e">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<title>झाडांचा नकाशा · Zaadancha Naksha</title>
+<meta name="description" content="पुण्याची ४० लाख झाडं, नकाशावर. Pune's 2019 tree census of 4,009,624 trees — explorable. Grid map, flowering calendar, rare and giant trees, ward leaderboard.">
+<meta name="theme-color" content="#0A0D0A">
 <meta property="og:title" content="झाडांचा नकाशा · Zaadancha Naksha">
-<meta property="og:description" content="Pune's 2019 tree census, explorable. 4.09 million trees.">
+<meta property="og:description" content="पुण्याची ४० लाख झाडं, नकाशावर. Pune's 2019 tree census, made explorable.">
 <meta property="og:type" content="website">
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E🌳%3C/text%3E%3C/svg%3E">
-<!-- Leaflet is vendored into this repo, not pulled from a CDN: one less third
-     party in the request chain, and the site keeps working if a CDN doesn't. -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@300..700&family=Inter:wght@400;500;600;700&display=swap">
+
+<!-- Leaflet is vendored in this repo, not pulled from a CDN. -->
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="app">
 
-  <header>
+<div id="map" role="application" aria-label="पुणे झाडांचा नकाशा"></div>
+
+<!-- ------------------------------------------------------------ top bar -->
+<div class="topbar">
+  <div class="brand">
     <div class="brandrow">
-      <h1>झाडांचा नकाशा</h1>
-      <span class="sub">Zaadancha Naksha · Pune Tree Map</span>
-    </div>
-    <div class="banner" role="note">
-      <span class="icon" aria-hidden="true">ⓘ</span>
-      <span>
-        <b>माहिती:</b> पुणे महानगरपालिका वृक्ष गणना, <b>ऑगस्ट २०१९</b>, OpenCity मार्फत.
-        २०१९ नंतर लावलेली किंवा तोडलेली झाडे इथे दिसणार नाहीत. ही महापालिकेची अधिकृत सेवा नाही.
-        <br>
-        <span class="en">Data: PMC Tree Census, August 2019, via OpenCity. Trees planted or cut
-        since 2019 are not reflected. Not an official PMC service.</span>
-      </span>
-    </div>
-  </header>
-
-  <div id="mapwrap">
-    <div id="map" role="application" aria-label="पुणे झाडांचा नकाशा / Pune tree map"></div>
-
-    <div class="maptools">
-      <button id="tg-grid"   aria-pressed="true">🟩 <span>ग्रिड</span></button>
-      <button id="tg-rare"   aria-pressed="false">⭐ <span>दुर्मिळ</span></button>
-      <button id="tg-giants" aria-pressed="false">🔵 <span>महाकाय</span></button>
-    </div>
-
-    <div class="legend" id="legend">
-      <div class="t">झाडांची घनता <span class="en">trees per cell</span></div>
-      <div class="ramp" aria-hidden="true">
-        <i style="background:var(--seq-1)"></i><i style="background:var(--seq-3)"></i>
-        <i style="background:var(--seq-5)"></i><i style="background:var(--seq-7)"></i>
-        <i style="background:var(--seq-9)"></i><i style="background:var(--seq-11)"></i>
+      <div class="brand-chip">
+        <svg class="leaf" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 21v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M12 14c0-4.5 2.6-8.2 7-9 .6 4.9-2 9-7 9Z" fill="currentColor" opacity=".9"/>
+          <path d="M12 17c-4.2 0-6.7-3.1-6.2-7.4C9.6 10.3 12 13.2 12 17Z" fill="currentColor" opacity=".5"/>
+        </svg>
+        <h1>झाडांचा नकाशा</h1>
       </div>
-      <div class="rampscale"><span id="lg-lo">1</span><span id="lg-hi">—</span></div>
-      <div class="kv" hidden id="lg-rare"><span class="dot rare"></span> दुर्मिळ <span class="en">rare</span></div>
-      <div class="kv" hidden id="lg-giant"><span class="dot giant"></span> महाकाय <span class="en">giants</span></div>
+      <button class="pill icon" id="theme" aria-label="Toggle light and dark">◐</button>
     </div>
+
+    <button class="honest" id="honest" aria-expanded="false">
+      <b>PMC वृक्ष गणना · ऑगस्ट २०१९</b> — अधिकृत सेवा नाही <span class="caret">▾</span>
+      <span class="more">
+        २०१९ नंतर लावलेली किंवा तोडलेली झाडं इथे दिसणार नाहीत. OpenCity मार्फत मिळालेली खुली माहिती.<br>
+        Data: PMC Tree Census, August&nbsp;2019, via OpenCity. Trees planted or cut since 2019 are
+        not reflected. Not an official PMC service.
+      </span>
+    </button>
   </div>
 
-  <div id="sheet">
-    <div class="tabs" role="tablist">
-      <button role="tab" id="tab-map"     aria-controls="p-map"     aria-selected="true">नकाशा<span class="en2">Map</span></button>
-      <button role="tab" id="tab-flower"  aria-controls="p-flower"  aria-selected="false">फुलं<span class="en2">Flowering</span></button>
-      <button role="tab" id="tab-treasure" aria-controls="p-treasure" aria-selected="false">खजिना<span class="en2">Treasures</span></button>
-      <button role="tab" id="tab-ward"    aria-controls="p-ward"    aria-selected="false">प्रभाग<span class="en2">Wards</span></button>
-      <button role="tab" id="tab-facts"   aria-controls="p-facts"   aria-selected="false">तथ्ये<span class="en2">Facts</span></button>
-    </div>
-
-    <div class="panels">
-      <div class="panel" id="p-map" role="tabpanel" aria-labelledby="tab-map">
-        <div class="stats" id="stats"></div>
-        <div id="cellinfo">
-          <p class="hint">नकाशावरील चौकोनावर टॅप करा — त्या भागातील झाडांची संख्या आणि मुख्य प्रजाती दिसतील.
-          <span class="en">Tap a square on the map to see its tree count and top species.</span></p>
-        </div>
-        <div id="natsplit"></div>
-        <footer id="footer"></footer>
-      </div>
-
-      <div class="panel" id="p-flower" role="tabpanel" aria-labelledby="tab-flower" hidden>
-        <h2>फुलांचा महिना <span class="en">Phulancha mahina — what's in bloom</span></h2>
-        <p class="hint">महिना निवडा. <span class="en">Pick a month to see which of Pune's species flower then.</span></p>
-        <div class="chips" id="months" role="group" aria-label="महिना निवडा"></div>
-        <div id="flowerlist"></div>
-      </div>
-
-      <div class="panel" id="p-treasure" role="tabpanel" aria-labelledby="tab-treasure" hidden>
-        <h2>खजिन्याचा शोध <span class="en">Treasure hunt — rare & giant trees</span></h2>
-        <p class="hint">यादीतील झाडावर टॅप करा — नकाशा तिथे जाईल.
-        <span class="en">Tap any tree to fly the map to it.</span></p>
-        <div class="sortrow">
-          <button id="tr-rare" aria-pressed="true">⭐ दुर्मिळ <span class="en">Rare</span></button>
-          <button id="tr-giant" aria-pressed="false">🔵 महाकाय <span class="en">Giants</span></button>
-        </div>
-        <div id="treasurelist"></div>
-      </div>
-
-      <div class="panel" id="p-ward" role="tabpanel" aria-labelledby="tab-ward" hidden>
-        <h2>प्रभाग क्रमवारी <span class="en">Ward leaderboard</span></h2>
-        <div class="sortrow">
-          <button id="w-count" aria-pressed="true">झाडांची संख्या <span class="en">By count</span></button>
-          <button id="w-native" aria-pressed="false">देशी % <span class="en">By native %</span></button>
-        </div>
-        <p class="hint" id="wardnote"></p>
-        <div id="wardlist"></div>
-      </div>
-
-      <div class="panel" id="p-facts" role="tabpanel" aria-labelledby="tab-facts" hidden>
-        <h2>शेअर करण्यासारखी तथ्ये <span class="en">Shareable fact cards</span></h2>
-        <p class="hint">प्रत्येक कार्ड थेट डेटामधून तयार होते. <span class="en">Every card is generated from the census numbers, not written by hand.</span></p>
-        <div id="facts"></div>
-      </div>
-    </div>
+  <div class="toolstack">
+    <button class="pill" data-k="grid"  id="tg-grid"   aria-pressed="true"><i class="swatch"></i>ग्रिड</button>
+    <button class="pill" data-k="rare"  id="tg-rare"   aria-pressed="false"><i class="swatch"></i>दुर्मिळ</button>
+    <button class="pill" data-k="giant" id="tg-giants" aria-pressed="false"><i class="swatch"></i>महाकाय</button>
   </div>
 </div>
 
-<div id="boot" class="loading">झाडे मोजतो आहे… <span class="en">Loading the census…</span></div>
+<!-- ------------------------------------------------------------- legend -->
+<div class="legend" id="legend">
+  <div class="lt">झाडांची घनता</div>
+  <div class="ramp" id="ramp" aria-hidden="true"></div>
+  <div class="rampscale"><span>कमी</span><span id="lg-hi">—</span></div>
+</div>
+
+<!-- -------------------------------------------------------------- sheet -->
+<div id="sheet">
+  <div class="grab" id="grab" role="button" tabindex="0" aria-label="पॅनेल उघडा किंवा बंद करा"></div>
+
+  <div class="rail" role="tablist" id="rail">
+    <button role="tab" id="tab-map"      aria-controls="p-map"      aria-selected="true">नकाशा</button>
+    <button role="tab" id="tab-flower"   aria-controls="p-flower"   aria-selected="false">फुलं</button>
+    <button role="tab" id="tab-treasure" aria-controls="p-treasure" aria-selected="false">खजिना</button>
+    <button role="tab" id="tab-ward"     aria-controls="p-ward"     aria-selected="false">प्रभाग</button>
+    <button role="tab" id="tab-facts"    aria-controls="p-facts"    aria-selected="false">तथ्यं</button>
+  </div>
+
+  <div class="peekline" id="peekline"></div>
+
+  <div class="panels" id="panels">
+
+    <section class="panel" id="p-map" role="tabpanel" aria-labelledby="tab-map">
+      <div class="hero" id="hero"></div>
+      <div id="cellinfo"></div>
+      <div id="natsplit"></div>
+      <div class="foot" id="foot"></div>
+    </section>
+
+    <section class="panel" id="p-flower" role="tabpanel" aria-labelledby="tab-flower" hidden>
+      <p class="eyebrow">Phulancha mahina</p>
+      <h2 class="h">फुलांचा महिना</h2>
+      <p class="sub">महिना निवडा — त्या महिन्यात पुण्यात काय फुलतं ते बघा.</p>
+      <div class="months" id="months" role="group" aria-label="महिना निवडा"></div>
+      <div id="flowerlist"></div>
+    </section>
+
+    <section class="panel" id="p-treasure" role="tabpanel" aria-labelledby="tab-treasure" hidden>
+      <p class="eyebrow">Treasure hunt</p>
+      <h2 class="h">खजिन्याचा शोध</h2>
+      <p class="sub">यादीतल्या झाडावर टॅप करा — नकाशा तिथे जाईल.</p>
+      <div class="segctl">
+        <button id="tr-rare"  aria-pressed="true">दुर्मिळ</button>
+        <button id="tr-giant" aria-pressed="false">महाकाय</button>
+      </div>
+      <div id="treasurelist"></div>
+    </section>
+
+    <section class="panel" id="p-ward" role="tabpanel" aria-labelledby="tab-ward" hidden>
+      <p class="eyebrow">Ward leaderboard</p>
+      <h2 class="h">प्रभाग क्रमवारी</h2>
+      <p class="sub" id="wardnote"></p>
+      <div class="segctl">
+        <button id="w-count"  aria-pressed="true">झाडांची संख्या</button>
+        <button id="w-native" aria-pressed="false">देशी %</button>
+      </div>
+      <div id="wardlist"></div>
+    </section>
+
+    <section class="panel" id="p-facts" role="tabpanel" aria-labelledby="tab-facts" hidden>
+      <p class="eyebrow">Shareable</p>
+      <h2 class="h">शेअर करण्यासारखं</h2>
+      <p class="sub">प्रत्येक कार्ड थेट आकड्यांमधून तयार होतं — हाताने लिहिलेलं नाही.</p>
+      <div id="facts"></div>
+    </section>
+
+  </div>
+</div>
+
+<div id="boot">
+  <div class="spin"></div>
+  <div class="bl">झाडं मोजतो आहे…</div>
+  <div class="bs">Loading 4 million trees</div>
+</div>
 
 <script src="vendor/leaflet/leaflet.js"></script>
 <script src="app.js"></script>
