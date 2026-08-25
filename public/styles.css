@@ -4,6 +4,33 @@
    No trackers, no storage.
    ========================================================================== */
 
+/* Self-hosted so the page never depends on fonts.gstatic.com being fast or
+   reachable — which on an Indian mobile network it often is not. */
+@font-face {
+  font-family: "Anek Devanagari";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("vendor/fonts/anek-devanagari-devanagari-wght-normal.woff2") format("woff2");
+  unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
+}
+@font-face {
+  font-family: "Anek Devanagari";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("vendor/fonts/anek-devanagari-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2039-203A, U+2122;
+}
+@font-face {
+  font-family: "InterVar";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("vendor/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2039-203A, U+2122;
+}
+
 :root {
   color-scheme: dark;
 
@@ -46,7 +73,7 @@
   --shadow-lift: 0 1px 2px rgba(0,0,0,.5), 0 8px 28px rgba(0,0,0,.45);
 
   --f-dev: "Anek Devanagari", "Noto Sans Devanagari", "Nirmala UI", system-ui, sans-serif;
-  --f-ui:  "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-ui:  "InterVar", "Anek Devanagari", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 :root[data-theme="light"] {
@@ -201,6 +228,40 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 .pill[aria-pressed="true"][data-k="rare"]  { border-color: color-mix(in srgb, var(--gold) 55%, transparent); }
 .pill[aria-pressed="true"][data-k="giant"] { border-color: color-mix(in srgb, var(--blue) 55%, transparent); }
 .pill.icon { width: 38px; padding: 0; justify-content: center; font-size: .95rem; }
+.pill.lang { font-family: var(--f-ui); font-size: .72rem; font-weight: 700; letter-spacing: .04em; padding: 0 11px; }
+
+/* zoom hint over the map when a point layer is hidden at low zoom */
+.zoomhint {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 26;
+  bottom: calc(var(--peek, 132px) + 18px);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--hair); border-radius: 999px;
+  padding: 7px 14px; font-size: .74rem; color: var(--txt-2);
+  box-shadow: var(--shadow-lift); white-space: nowrap;
+  max-width: 92vw; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* credits */
+.made {
+  border-radius: 20px; padding: 18px; margin-top: 26px;
+  background: linear-gradient(150deg, var(--accent-dim), transparent 70%), var(--raised);
+  border: 1px solid var(--hair);
+}
+.made .mk { font-size: .66rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--txt-3); }
+.made .mn { font-family: var(--f-dev); font-size: 1.22rem; font-weight: 600; margin: 5px 0 2px; }
+.made .mr2 { font-size: .82rem; color: var(--txt-2); margin: 0 0 14px; }
+.links { display: flex; flex-wrap: wrap; gap: 7px; }
+.links a {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 36px; padding: 0 13px; border-radius: 10px;
+  background: var(--raised-2); border: 1px solid var(--hair);
+  color: var(--txt); text-decoration: none;
+  font-size: .79rem; font-weight: 500;
+  transition: border-color .15s, background .15s;
+}
+.links a:hover { border-color: var(--hair-2); }
+.links a.key { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
 
 /* --------------------------------------------------------------- legend -- */
 .legend {
@@ -259,8 +320,8 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 .rail::-webkit-scrollbar { display: none; }
 .rail button {
   flex: 0 0 auto;
-  font-family: var(--f-dev); font-weight: 500; font-size: .88rem;
-  padding: 8px 15px; border-radius: 999px;
+  font-family: var(--f-dev); font-weight: 500; font-size: .86rem;
+  padding: 8px 13px; border-radius: 999px; white-space: nowrap;
   color: var(--txt-3);
   border: 1px solid transparent;
   transition: color .15s, background .15s, border-color .15s;
